@@ -42,6 +42,7 @@ namespace Gbm.Git
                 var gitResult = await RunGitAsync("branch --list");
                 var branchs = gitResult
                     .Split('\n')
+                    .Select(b => b.Replace("* ", string.Empty))
                     .Select(b => b.Trim());
                 if (!branchs.Any())
                     throw new InvalidOperationException("Could not determine the main branch. Please ensure you are in a valid Git repository.");

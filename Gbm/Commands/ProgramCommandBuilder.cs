@@ -43,11 +43,28 @@ namespace Gbm.Commands
                 return await taskCommand.ExecuteAsync(args.GitTool, args.TaskBranch, args.Repositories);
             }
 
+            if (command is OpenPrsTaskCommand openPrsTask)
+            {
+                if (args.GitTool is null) throw new InvalidOperationException("GitTool is not initialized.");
+                if (args.TaskBranch is null) throw new InvalidOperationException("TaskBranch is not initialized.");
+                if (args.Repositories is null) throw new InvalidOperationException("Repositories is not initialized.");
+                if (args.GitHubToken is null) throw new InvalidOperationException("GitHubToken is not initialized.");
+
+                return await openPrsTask.ExecuteAsync(args.GitTool, args.TaskBranch, args.Repositories, args.GitHubToken);
+            }
+
             if (command is SetBasePathCommand setBasePath)
             {
                 if (args.BasePath is null) throw new InvalidOperationException("BasePath is not initialized.");
                 
                 return setBasePath.Execute(args.BasePath);
+            }
+
+            if (command is SetGitHubTokenCommand setGitHubToken)
+            {
+                if (args.GitHubToken is null) throw new InvalidOperationException("GitHubToken is not initialized.");
+                
+                return setGitHubToken.Execute(args.GitHubToken);
             }
 
             if (command is HelpCommand helpCommand)

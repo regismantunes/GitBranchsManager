@@ -2,7 +2,7 @@
   "profiles": {
     "Gbm": {
       "commandName": "Project",
-      "commandLineArgs": "-r SSM-903"
+      "commandLineArgs": "-pr SSM-1114"
     }
   }
 }

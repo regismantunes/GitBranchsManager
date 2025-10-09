@@ -7,6 +7,7 @@ namespace Gbm.Commands.Args
         string? BasePath = null,
         GitTool? GitTool = null,
         string? TaskBranch = null,
-        string[]? Repositories = null
+        string[]? Repositories = null,
+        string? GitHubToken = null
     );
 }

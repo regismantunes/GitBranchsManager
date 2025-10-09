@@ -4,29 +4,22 @@ using Gbm.Git;
 
 namespace Gbm.Commands
 {
-    public class OpenPrsTaskCommand : ITaskCommand
+    public class OpenPrsTaskCommand
     {
         private const string OWNER = "Betenbough-Companies";
         
-        public async Task<int> ExecuteAsync(GitTool gitTool, string taskBranch, string[] repositories)
+        public async Task<int> ExecuteAsync(GitTool gitTool, string taskBranch, string[] repositories, string githubToken)
         {
-            var githubToken = Environment.GetEnvironmentVariable("GITHUB_TOKEN");
-            
-            if (string.IsNullOrEmpty(githubToken))
-            {
-                MyConsole.WriteError("❌ GitHub Token is not set.");
-                MyConsole.WriteError("Use the command: gbm -gt <GITHUB_TOKEN>");
-                return 1;
-            }
-
             try
             {
                 var createdPRs = new List<CreatedPr>();
 
                 // Create PRs for each repository
+                MyConsole.WriteHeader($"--- Creating PRs ---");
                 foreach (var repo in repositories)
                 {
-                    MyConsole.WriteHeader($"--- Creating PR in repository: {repo} ---");
+                    MyConsole.WriteStep($"→ Creating PR in {repo}");
+                    gitTool.SetRepository(repo);
                     var baseBranch = await gitTool.GetMainBranchAsync();
                     var pr = await CreatePullRequestAsync(githubToken, OWNER, repo, taskBranch, baseBranch);
                     createdPRs.Add(pr);
@@ -67,10 +60,14 @@ namespace Gbm.Commands
             httpClient.DefaultRequestHeaders.Add("User-Agent", "Gbm");
             httpClient.DefaultRequestHeaders.Add("X-GitHub-Api-Version", "2022-11-28");
 
+            var taskId = branchName.Contains('/') ?
+                branchName.Split('/')[1] :
+                branchName;
+
             var prBody = new
             {
-                title = $"[{branchName}] Pull Request",
-                body = $"This PR implements the {branchName} feature.",
+                title = $"[{taskId}] Pull Request",
+                body = $"This PR implements the {taskId} feature.",
                 head = branchName,
                 @base = baseBranch
             };
@@ -90,10 +87,7 @@ namespace Gbm.Commands
             var prData = JsonSerializer.Deserialize<GitHubPrResponse>(responseContent, new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
-            });
-
-            if (prData == null)
-                throw new Exception($"Failed to deserialize PR response for {repo}");
+            }) ?? throw new Exception($"Failed to deserialize PR response for {repo}");
 
             MyConsole.WriteSucess($"✅ PR created in {repo}: {prData.HtmlUrl}");
             return new CreatedPr { Repo = repo, Number = prData.Number, Url = prData.HtmlUrl };
