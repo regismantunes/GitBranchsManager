@@ -27,7 +27,7 @@ namespace Gbm.Commands
                 foreach (var repo in repositories)
                 {
                     MyConsole.WriteHeader($"--- Creating PR in repository: {repo} ---");
-                    var baseBranch = gitTool.GetMainBranchAsync();
+                    var baseBranch = await gitTool.GetMainBranchAsync();
                     var pr = await CreatePullRequestAsync(githubToken, OWNER, repo, taskBranch, baseBranch);
                     createdPRs.Add(pr);
                 }
