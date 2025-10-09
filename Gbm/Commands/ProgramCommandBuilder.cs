@@ -1,4 +1,5 @@
 ﻿using Gbm.Commands.Args;
+using System.Threading.Tasks;
 
 namespace Gbm.Commands
 {
@@ -14,7 +15,9 @@ namespace Gbm.Commands
             { "-d", typeof(SendTaskToDevelopCommand) },
             { "-h", typeof(HelpCommand) },
             { "-b", typeof(SetBasePathCommand) },
-            { "-l", typeof(ListTaskCommand) }
+            { "-l", typeof(ListTaskCommand) },
+            { "-pr", typeof(OpenPrsTaskCommand) },
+            { "-gt", typeof(SetGitHubTokenCommand) }
         };
         public static object? Create(string action)
         {
@@ -26,7 +29,7 @@ namespace Gbm.Commands
 
         public static bool IsValidAction(string action) => ArgCommands.ContainsKey(action);
 
-        public static int ExecuteWithArgs(ArgsContext args)
+        public static async Task<int> ExecuteWithArgsAsync(ArgsContext args)
         {
             var command = Create(args.Action)
                 ?? throw new InvalidOperationException($"Unknown action '{args.Action}'.");
@@ -37,7 +40,7 @@ namespace Gbm.Commands
                 if (args.TaskBranch is null) throw new InvalidOperationException("TaskBranch is not initialized.");
                 if (args.Repositories is null) throw new InvalidOperationException("Repositories is not initialized.");
 
-                return taskCommand.Execute(args.GitTool, args.TaskBranch, args.Repositories);
+                return await taskCommand.ExecuteAsync(args.GitTool, args.TaskBranch, args.Repositories);
             }
 
             if (command is SetBasePathCommand setBasePath)
