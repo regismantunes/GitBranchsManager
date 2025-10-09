@@ -4,7 +4,7 @@ namespace Gbm.Commands
 {
 	public class PushTaskCommand : ITaskCommand
 	{
-		public int Execute(GitTool gitTool, string taskBranch, string[] repositories)
+		public async Task<int> ExecuteAsync(GitTool gitTool, string taskBranch, string[] repositories)
 		{
             gitTool.ShowGitOutput = true;
             foreach (var repo in repositories)
@@ -13,10 +13,10 @@ namespace Gbm.Commands
                 gitTool.SetRepository(repo);
 
                 MyConsole.WriteStep($"→ Checking out to '{taskBranch}'");
-                gitTool.Checkout(taskBranch);
+                await gitTool.CheckoutAsync(taskBranch);
                 
 				MyConsole.WriteStep($"→ Pushing '{taskBranch}'");
-                gitTool.Push();
+                await gitTool.PushAsync();
 			}
 
             MyConsole.WriteSucess("✅ Branch's task pushed!");

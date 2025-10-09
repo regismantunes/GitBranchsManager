@@ -5,13 +5,13 @@ namespace Gbm
 {
     public static class Program
     {   
-        public static int Main(string[] args)
+        public static async Task<int> Main(string[] args)
         {
             try
             {
                 MyConsole.SetEncoding();
                 var ctx = ArgsBuilder.Build(args);
-                return ProgramCommandBuilder.ExecuteWithArgs(ctx);
+                return await ProgramCommandBuilder.ExecuteWithArgsAsync(ctx);
             }
             catch (ArgsValidationException vex)
             {

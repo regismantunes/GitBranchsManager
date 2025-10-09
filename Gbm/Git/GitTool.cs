@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Threading.Tasks;
 
 namespace Gbm.Git
 {
@@ -35,12 +34,13 @@ namespace Gbm.Git
             WorkingDirectory = workingDirectory;
         }
 
-        public string GetMainBranch()
+        public async Task<string> GetMainBranchAsync()
         {
             try
             {
                 DisableShowGitOutput();
-                var branchs = RunGit("branch --list")
+                var gitResult = await RunGitAsync("branch --list");
+                var branchs = gitResult
                     .Split('\n')
                     .Select(b => b.Trim());
                 if (!branchs.Any())
@@ -62,38 +62,38 @@ namespace Gbm.Git
             }
         }
 
-        public void CheckoutToMain()
+        public async Task CheckoutToMainAsync()
         {
-            var mainBranch = GetMainBranch();
-            Checkout(mainBranch);
+            var mainBranch = await GetMainBranchAsync();
+            await CheckoutAsync(mainBranch);
         }
 
-        public void Checkout(string branch)
+        public async Task CheckoutAsync(string branch)
         {
             while (true)
             {
-                if (RunGitOk($"checkout {branch}")) return;
+                if (await RunGitOkAsync($"checkout {branch}")) return;
                 MyConsole.WriteError($"❌ It was not possible to checkout to '{branch}' branch.");
                 MyConsole.WriteError("🛑 Please resolve the not commited files, then press ENTER to continue...");
                 Console.ReadLine();
             }
         }
 
-        public void GetMainChanges()
+        public async Task GetMainChangesAsync()
         {
-            var mainBranch = GetMainBranch();
-            PullOrigin(branchFrom: mainBranch);
+            var mainBranch = await GetMainBranchAsync();
+            await PullOriginAsync(branchFrom: mainBranch);
         }
 
-        public string GetCurrentBranch()
+        public async Task<string> GetCurrentBranchAsync()
         {
             try
             {
                 DisableShowGitOutput();
-                var branch = RunGit("rev-parse --abbrev-ref HEAD").Trim();
+                var branch = await RunGitAsync("rev-parse --abbrev-ref HEAD");
                 if (string.IsNullOrWhiteSpace(branch))
                     throw new InvalidOperationException("Could not determine the current branch. Please ensure you are in a valid Git repository.");
-                return branch;
+                return branch.Trim();
             }
             finally
             {
@@ -101,14 +101,14 @@ namespace Gbm.Git
             }
         }
 
-        public void PullOrigin(string branchFrom)
+        public async Task PullOriginAsync(string branchFrom)
         {
-            var branchTo = GetCurrentBranch();
-            if (RunGitOk($"pull origin {branchFrom}")) return;
+            var branchTo = await GetCurrentBranchAsync();
+            if (await RunGitOkAsync($"pull origin {branchFrom}")) return;
             MyConsole.WriteError($"❌ Merge conflict detected while getting changes from '{branchFrom}' into '{branchTo}'.");
             MyConsole.WriteError("🛑 Please resolve the conflicts manually, then press ENTER to continue...");
             Console.ReadLine();
-            while (HasUncommittedChanges())
+            while (await HasUncommittedChangesAsync())
             {
                 MyConsole.WriteError($"❌ There is still uncommitted changes.");
                 MyConsole.WriteError("🛑 Please resolve the not commited files, then press ENTER to continue...");
@@ -116,32 +116,32 @@ namespace Gbm.Git
             }
         }
 
-        public void Pull()
+        public async Task PullAsync()
         {
-            RunGit("pull");
+            await RunGitAsync("pull");
         }
 
-        public void CheckoutNewBranch(string branch)
+        public async Task CheckoutNewBranchAsync(string branch)
         {
-            RunGit($"checkout -b {branch}");
+            await RunGitAsync($"checkout -b {branch}");
         }
 
-        public void Push()
+        public async Task PushAsync()
         {
-            var branch = GetCurrentBranch();
-            var branchRemoteExists = BranchExistsRemotely(branch);
+            var branch = await GetCurrentBranchAsync();
+            var branchRemoteExists = await BranchExistsRemotelyAsync(branch);
             
-            RunGit(branchRemoteExists ?
+            await RunGitAsync(branchRemoteExists ?
                 "push" :
                 $"push --set-upstream origin {branch}");
         }
 
-        public bool BranchExistsRemotely(string branch)
+        public async Task<bool> BranchExistsRemotelyAsync(string branch)
         {
             try
             {
                 DisableShowGitOutput();
-                var result = RunGit($"ls-remote --heads origin {branch}");
+                var result = await RunGitAsync($"ls-remote --heads origin {branch}");
                 return !string.IsNullOrWhiteSpace(result);
             }
             finally
@@ -150,20 +150,20 @@ namespace Gbm.Git
             }
         }
 
-        public void DeleteLocalBranch(string branch)
+        public async Task DeleteLocalBranchAsync(string branch)
         {
-            var currentBranch = GetCurrentBranch();
+            var currentBranch = await GetCurrentBranchAsync();
             if (currentBranch == branch)
-                CheckoutToMain();
-            RunGit($"branch -d {branch}");
+                await CheckoutToMainAsync();
+            await RunGitAsync($"branch -d {branch}");
         }
 
-        public bool HasUncommittedChanges()
+        public async Task<bool> HasUncommittedChangesAsync()
         {
             try
             {
                 DisableShowGitOutput();
-                var status = RunGit("status --porcelain");
+                var status = await RunGitAsync("status --porcelain");
                 return !string.IsNullOrWhiteSpace(status);
             }
             finally
@@ -172,12 +172,12 @@ namespace Gbm.Git
             }
         }
 
-        public bool BranchExists(string branch)
+        public async Task<bool> BranchExistsAsync(string branch)
         {
             try
             {
                 DisableShowGitOutput();
-                var result = RunGit($"branch --list {branch}");
+                var result = await RunGitAsync($"branch --list {branch}");
                 return !string.IsNullOrWhiteSpace(result);
             }
             finally
@@ -186,18 +186,19 @@ namespace Gbm.Git
             }
         }
 
-        private bool RunGitOk(string arguments)
+        private async Task<bool> RunGitOkAsync(string arguments)
         {
-            RunGit(arguments, out int exitCode);
-            return exitCode == 0;
+            var result = await RunGitAndGetResultAsync(arguments);
+            return result.ExitCode == 0;
         }
 
-        private string RunGit(string arguments)
+        private async Task<string> RunGitAsync(string arguments)
         {
-            return RunGit(arguments, out int _);
+            var result = await RunGitAndGetResultAsync(arguments);
+            return result.Output;
         }
 
-        private string RunGit(string arguments, out int exitCode)
+        private async Task<RunGitResult> RunGitAndGetResultAsync(string arguments)
         {
             if (string.IsNullOrEmpty(WorkingDirectory))
                 throw new InvalidOperationException("Repository is not set. Please set it using SetRepository method.");
@@ -217,14 +218,20 @@ namespace Gbm.Git
             process.Start();
             var stdout = process.StandardOutput.ReadToEnd();
             var stderr = process.StandardError.ReadToEnd();
-            process.WaitForExit();
-            exitCode = process.ExitCode;
+            await process.WaitForExitAsync();
+            var exitCode = process.ExitCode;
             if (ShowGitOutput)
             {
                 if (!string.IsNullOrWhiteSpace(stderr)) MyConsole.WriteInfo(stderr.TrimEnd());
                 if (!string.IsNullOrWhiteSpace(stdout)) MyConsole.WriteInfo(stdout.TrimEnd());
             }
-            return stdout;
+            return new RunGitResult { ExitCode = exitCode, Output = stdout };
+        }
+
+        private struct RunGitResult
+        {
+            public string Output { get; set; }
+            public int ExitCode { get; set; }
         }
     }
 }

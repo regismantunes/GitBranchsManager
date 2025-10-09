@@ -4,8 +4,8 @@
     {
         public int Execute(string basePath)
         {
-            var basePathEnvVar = EnvironmentVariables.BasePath;
-            Environment.SetEnvironmentVariable(basePathEnvVar, basePath, EnvironmentVariableTarget.User);
+            var envVar = EnvironmentVariables.BasePath;
+            Environment.SetEnvironmentVariable(envVar, basePath, EnvironmentVariableTarget.User);
             MyConsole.WriteSucess($"✅ Base path updated to '{basePath}' (User scope)");
             return 0;
         }

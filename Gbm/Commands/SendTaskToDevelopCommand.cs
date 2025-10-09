@@ -4,28 +4,28 @@ namespace Gbm.Commands
 {
 	public class SendTaskToDevelopCommand : ITaskCommand
 	{
-		public int Execute(GitTool gitTool, string taskBranch, string[] repositories)
+		public async Task<int> ExecuteAsync(GitTool gitTool, string taskBranch, string[] repositories)
 		{
             gitTool.ShowGitOutput = true;
             foreach (var repo in repositories)
 			{
 				if (repo.EndsWith("sdk", StringComparison.OrdinalIgnoreCase)) continue;
                 gitTool.SetRepository(repo);
-                var branchExists = gitTool.BranchExists(taskBranch);
+                var branchExists = await gitTool.BranchExistsAsync(taskBranch);
 				if (!branchExists) continue;
 				MyConsole.WriteHeader($"--- Processing repository: {repo} ---");
 				
 				MyConsole.WriteStep("→ Checking out 'develop' branch");
-				gitTool.Checkout("develop");
+				await gitTool.CheckoutAsync("develop");
 
                 MyConsole.WriteStep("→ Pulling latest changes from 'develop'");
-				gitTool.Pull();
+				await gitTool.PullAsync();
 
                 MyConsole.WriteStep($"→ Merging branch '{taskBranch}'");
-				gitTool.PullOrigin(taskBranch);
+				await gitTool.PullOriginAsync(taskBranch);
 
                 MyConsole.WriteStep("→ Pushing changes to remote 'develop' branch");
-				gitTool.Push();
+				await gitTool.PushAsync();
 			}
 
             MyConsole.WriteSucess("✅ Changes were moved to develop successfully!");

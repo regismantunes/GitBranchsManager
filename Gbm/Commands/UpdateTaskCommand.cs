@@ -4,7 +4,7 @@ namespace Gbm.Commands
 {
     public class UpdateTaskCommand : ITaskCommand
     {
-        public int Execute(GitTool gitTool, string taskBranch, string[] repositories)
+        public async Task<int> ExecuteAsync(GitTool gitTool, string taskBranch, string[] repositories)
         {
             gitTool.ShowGitOutput = true;
             foreach (var repo in repositories)
@@ -12,9 +12,9 @@ namespace Gbm.Commands
                 MyConsole.WriteHeader($"--- Processing repository: {repo} ---");
                 gitTool.SetRepository(repo);
                 MyConsole.WriteStep($"→ Checking out to '{taskBranch}'");
-                gitTool.Checkout(taskBranch);
+                await gitTool.CheckoutAsync(taskBranch);
                 MyConsole.WriteStep($"→ Updating '{taskBranch}' from {repo}");
-                gitTool.GetMainChanges();
+                await gitTool.GetMainChangesAsync();
             }
 
             MyConsole.WriteSucess($"✅ Branches from task {taskBranch} were updated!.");
