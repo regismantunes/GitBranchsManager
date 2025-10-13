@@ -27,6 +27,23 @@ namespace Gbm.Git
             ShowGitOutput = PreviousShowGitOutput;
         }
 
+        public string GetTaskIdFromBranch(string branchName)
+        {
+            if (string.IsNullOrWhiteSpace(branchName))
+                throw new ArgumentException("Branch name cannot be null or empty.", nameof(branchName));
+
+            var parts = branchName.Split('/');
+            return parts.Length > 1 ? parts[1] : branchName;
+        }
+
+        public string GetBranchNameFromTaskId(string taskId)
+        {
+            if (string.IsNullOrWhiteSpace(taskId))
+                throw new ArgumentException("Task ID cannot be null or empty.", nameof(taskId));
+
+            return $"feature/{taskId}";
+        }
+
         public void SetRepository(string repository)
         {
             var workingDirectory = Path.Combine(BasePath, repository);

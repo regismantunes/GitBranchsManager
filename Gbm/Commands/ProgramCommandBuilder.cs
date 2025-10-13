@@ -1,4 +1,8 @@
 ﻿using Gbm.Commands.Args;
+using Gbm.Commands.EnvironmentCommands;
+using Gbm.Commands.PullRequestCommands;
+using Gbm.Commands.TaskCommands;
+using Gbm.Jira;
 using System.Threading.Tasks;
 
 namespace Gbm.Commands
@@ -16,8 +20,17 @@ namespace Gbm.Commands
             { "-h", typeof(HelpCommand) },
             { "-b", typeof(SetBasePathCommand) },
             { "-l", typeof(ListTaskCommand) },
-            { "-pr", typeof(OpenPrsTaskCommand) },
-            { "-gt", typeof(SetGitHubTokenCommand) }
+            { "-pr", typeof(OpenPullRequestsTaskCommand) },
+            { "-gt", typeof(SetGitHubTokenCommand) },
+            { "-go", typeof(SetGitHubRepositoriesOwnerCommand) },
+            { "-jt", typeof(SetJiraTokenSecretyCommand) },
+            { "-ju", typeof(SetJiraUserMailCommand) },
+            { "-jd", typeof(SetJiraDomainCommand) },
+            { "-t", typeof(SaveTaskInfoCommand) },
+            { "-jp", typeof(SetJiraUserPasswordCommand) },
+            { "-jc", typeof(SetJiraConsumerKeyCommand) },
+            { "-js", typeof(SetJiraConsumerSecretyCommand) },
+            { "-ja", typeof(SetJiraAccessTokenCommand) }
         };
         public static object? Create(string action)
         {
@@ -43,28 +56,29 @@ namespace Gbm.Commands
                 return await taskCommand.ExecuteAsync(args.GitTool, args.TaskBranch, args.Repositories);
             }
 
-            if (command is OpenPrsTaskCommand openPrsTask)
+            if (command is ISetEnvironmentCommand setEnvironment)
+            {
+                if (args.Environment is null) throw new InvalidOperationException("Environment is not initialized.");
+                return setEnvironment.Execute(args.Environment);
+            }
+
+            if (command is OpenPullRequestsTaskCommand openPrsTask)
             {
                 if (args.GitTool is null) throw new InvalidOperationException("GitTool is not initialized.");
                 if (args.TaskBranch is null) throw new InvalidOperationException("TaskBranch is not initialized.");
                 if (args.Repositories is null) throw new InvalidOperationException("Repositories is not initialized.");
-                if (args.GitHubToken is null) throw new InvalidOperationException("GitHubToken is not initialized.");
+                if (args.GitHubClient is null) throw new InvalidOperationException("GitHubClient is not initialized.");
+                if (args.JiraClient is null) throw new InvalidOperationException("JiraClient is not initialized.");
 
-                return await openPrsTask.ExecuteAsync(args.GitTool, args.TaskBranch, args.Repositories, args.GitHubToken);
+                return await openPrsTask.ExecuteAsync(args.GitTool, args.TaskBranch, args.Repositories, args.GitHubClient, args.JiraClient);
             }
 
-            if (command is SetBasePathCommand setBasePath)
+            if (command is SaveTaskInfoCommand saveTaskInfo)
             {
-                if (args.BasePath is null) throw new InvalidOperationException("BasePath is not initialized.");
+                if (args.JiraClient is not FakeJiraClient fakeJiraClient) throw new InvalidOperationException("JiraClient is not initialized.");
+                if (args.TaskId is null) throw new InvalidOperationException("TaskId is not initialized.");
                 
-                return setBasePath.Execute(args.BasePath);
-            }
-
-            if (command is SetGitHubTokenCommand setGitHubToken)
-            {
-                if (args.GitHubToken is null) throw new InvalidOperationException("GitHubToken is not initialized.");
-                
-                return setGitHubToken.Execute(args.GitHubToken);
+                return await saveTaskInfo.ExecuteAsync(fakeJiraClient, args.TaskId);
             }
 
             if (command is HelpCommand helpCommand)

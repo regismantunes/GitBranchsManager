@@ -4,7 +4,8 @@ using Gbm.Commands.Args;
 namespace Gbm
 {
     public static class Program
-    {   
+    {
+        [STAThread]
         public static async Task<int> Main(string[] args)
         {
             try

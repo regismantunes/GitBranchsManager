@@ -1,17 +1,26 @@
-﻿using Gbm.Git;
+﻿using Gbm.Environment;
+using Gbm.Git;
+using Gbm.GitHub;
+using Gbm.Jira;
+using System.Diagnostics;
 
 namespace Gbm.Commands.Args
 {
 	public static class ArgsBuilder
 	{
-		private const string MissingBasePathMessage = """
-			❌ Base path is not set.
-			Use the command: gbm -b <BasePath>
-			""";
-        private const string MissingGitHubTokenMessage = """
-			❌ GitHub Token is not set.
-			Use the command: gbm -gt <GitHubToken>
-			""";
+		private static IEnumerable<EnvironmentVariableCommandInfo> EnvironmentVariablesCommands => new List<EnvironmentVariableCommandInfo>()
+		{
+			{ new EnvironmentVariableCommandInfo { Action = "-b", ErrorMessage = ArgsFailMessages.MissingBasePathMessage, Variable = EnvironmentVariable.BasePath } },
+			{ new EnvironmentVariableCommandInfo { Action = "-gt", ErrorMessage = ArgsFailMessages.MissingGitHubTokenMessage, Variable = EnvironmentVariable.GitHubToken } },
+			{ new EnvironmentVariableCommandInfo { Action = "-go", ErrorMessage = ArgsFailMessages.MissingGitHubRepositoriesOwnerMessage, Variable = EnvironmentVariable.GitHubRepositoriesOwner } },
+            { new EnvironmentVariableCommandInfo { Action = "-jd", ErrorMessage = ArgsFailMessages.MissingJiraDomainMessage, Variable = EnvironmentVariable.JiraDomain } },
+            { new EnvironmentVariableCommandInfo { Action = "-ju", ErrorMessage = ArgsFailMessages.MissingJiraUserMailMessage, Variable = EnvironmentVariable.JiraUserMail } },
+            { new EnvironmentVariableCommandInfo { Action = "-jp", ErrorMessage = ArgsFailMessages.MissingJiraUserPasswordMessage, Variable = EnvironmentVariable.JiraUserPassword } },
+            { new EnvironmentVariableCommandInfo { Action = "-jc", ErrorMessage = ArgsFailMessages.MissingJiraConsumerKeyMessage, Variable = EnvironmentVariable.JiraConsumerKey } },
+            { new EnvironmentVariableCommandInfo { Action = "-js", ErrorMessage = ArgsFailMessages.MissingJiraConsumerSecretyMessage, Variable = EnvironmentVariable.JiraConsumerSecret } },
+            { new EnvironmentVariableCommandInfo { Action = "-ja", ErrorMessage = ArgsFailMessages.MissingJiraAccessTokenMessage, Variable = EnvironmentVariable.JiraAccessToken } },
+            { new EnvironmentVariableCommandInfo { Action = "-jt", ErrorMessage = ArgsFailMessages.MissingJiraTokenSecretyMessage, Variable = EnvironmentVariable.JiraTokenSecrety } }
+		};
 
         public static ArgsContext Build(string[] args)
 		{
@@ -22,17 +31,12 @@ namespace Gbm.Commands.Args
 				return new ArgsContext("-h");
 
 			var action = args[0];
-			if (action == "-b" ||
-				action == "-gt")
+			if (EnvironmentVariablesCommands.Any(c => c.Action == action))
 			{
                 if (args.Length < 2)
-					throw new ArgsValidationException(action == "-b" ? 
-													MissingBasePathMessage : 
-													MissingGitHubTokenMessage);
+					throw new ArgsValidationException(EnvironmentVariablesCommands.Single(c => c.Action == action).ErrorMessage);
                 var singleArg = args[1];
-                return action == "-b" ?
-					new ArgsContext(action, BasePath: singleArg) : 
-					new ArgsContext(action, GitHubToken: singleArg);
+                return new ArgsContext(action, Environment: singleArg);
             }
 
 			if (!ProgramCommandBuilder.IsValidAction(action))
@@ -41,13 +45,26 @@ namespace Gbm.Commands.Args
             if (args.Length < 2) throw new ArgsValidationException($"Missing TaskId. Example: gbm {action} SSM-903 [Repo1 Repo2 ...]");
 			if (action == "-n" && args.Length < 3) throw new ArgsValidationException("Missing repositories. Example: gbm -n SSM-903 Repo1 Repo2");
 
-			var taskBranch = $"feature/{args[1]}";
-			var reposArg = args.Length > 2 ? args[2..] : [];
-			var basePathEnvVar = EnvironmentVariables.BasePath;
-            var basePath = Environment.GetEnvironmentVariable(basePathEnvVar, EnvironmentVariableTarget.User)
-						?? Environment.GetEnvironmentVariable(basePathEnvVar, EnvironmentVariableTarget.Machine);
-			if (string.IsNullOrWhiteSpace(basePath)) throw new ArgsValidationException(MissingBasePathMessage);
-			var gitTool = new GitTool(basePath) { ShowGitOutput = false };
+            // Get task branch name
+            var taskId = args[1];
+
+            // Get base path from environment variable if not provided
+            var basePath = GetEnvironmentVariableOrThrow(EnvironmentVariable.BasePath);
+
+			if (action == "-t")
+			{
+                var jiraDomain = GetEnvironmentVariableOrThrow(EnvironmentVariable.JiraDomain);
+				var fakeJiraClient = GetFakeJiraClient(basePath, jiraDomain);
+				return new ArgsContext(action, JiraClient: fakeJiraClient, TaskId: taskId);
+            }
+
+            // Get repositories list (if any)
+            var reposArg = args.Length > 2 ? args[2..] : [];
+
+            // Initialize GitTool
+            var gitTool = new GitTool(basePath) { ShowGitOutput = false };
+			var taskBranch = gitTool.GetBranchNameFromTaskId(taskId);
+
             // For all except -n, preload repositories that have the feature branch if none provided
             if (action != "-n" && reposArg.Length == 0)
 			{
@@ -64,16 +81,62 @@ namespace Gbm.Commands.Args
 				if (reposArg.Length == 0)
 					throw new ArgsValidationException($"No repositories found with branch '{taskBranch}'.");
             }
-			string? gitHubToken = null;
+
+            // Initialize GitHubClient and JiraClient if action is -pr
+            GitHubClient? gitHubClient = null;
+			IJiraClient? jiraClient = null;
             if (action == "-pr")
 			{
-				var githubTokenEnvVar = EnvironmentVariables.GitHubToken;
-				gitHubToken = Environment.GetEnvironmentVariable(githubTokenEnvVar, EnvironmentVariableTarget.User)
-						?? Environment.GetEnvironmentVariable(githubTokenEnvVar, EnvironmentVariableTarget.Machine);
-				if (string.IsNullOrWhiteSpace(gitHubToken)) throw new ArgsValidationException(MissingGitHubTokenMessage);
+				var gitHubToken = GetEnvironmentVariableOrThrow(EnvironmentVariable.GitHubToken);
+				var repositoriesOwner = GetEnvironmentVariableOrThrow(EnvironmentVariable.GitHubRepositoriesOwner);
+				gitHubClient = new GitHubClient(gitHubToken, repositoriesOwner);
+
+                var jiraDomain = GetEnvironmentVariableOrThrow(EnvironmentVariable.JiraDomain);
+                var jiraConsumerKey = EnvironmentVariable.JiraConsumerKey.GetValue();
+				var jiraConsumerSecrety = EnvironmentVariable.JiraConsumerSecret.GetValue();
+				var jiraAcccessToken = EnvironmentVariable.JiraAccessToken.GetValue();
+				var jiraTokenSecrety = EnvironmentVariable.JiraTokenSecrety.GetValue();
+                var jiraUserMail = EnvironmentVariable.JiraUserMail.GetValue();
+				var jiraUserPassword = EnvironmentVariable.JiraUserPassword.GetValue();
+				if (jiraConsumerKey is not null &&
+					jiraConsumerSecrety is not null &&
+					jiraAcccessToken is not null &&
+					jiraTokenSecrety is not null)
+				{
+					jiraClient = new JiraClient(jiraDomain, jiraConsumerKey, jiraConsumerKey, jiraAcccessToken, jiraTokenSecrety);
+				}
+                else if (jiraUserMail is not null &&
+					jiraUserPassword is not null)
+				{
+					jiraClient = new JiraClient(jiraDomain, jiraUserMail, jiraUserPassword);
+                }
+				else
+				{
+					jiraClient = GetFakeJiraClient(basePath, jiraDomain);
+				}
             }
 
-			return new ArgsContext(action, basePath, gitTool, taskBranch, reposArg, gitHubToken);
+			return new ArgsContext(action, gitTool, taskBranch, reposArg, gitHubClient, jiraClient);
 		}
-	}
+
+		private static FakeJiraClient GetFakeJiraClient(string basePath, string jiraDomain) =>
+            new FakeJiraClient(
+                jiraDomain,
+				Path.Combine(basePath, "jiratasks.json"));
+
+		private static string GetEnvironmentVariableOrThrow(EnvironmentVariable variable)
+		{
+			var value = variable.GetValue();
+            return string.IsNullOrWhiteSpace(value) ? 
+				throw new ArgsValidationException(EnvironmentVariablesCommands.Single(c => c.Variable == variable).ErrorMessage) :
+				value;
+        }
+
+		private struct EnvironmentVariableCommandInfo
+		{
+			public string Action { get; init; }
+			public string ErrorMessage { get; init; }
+			public EnvironmentVariable Variable { get; init; }
+        }
+    }
 }

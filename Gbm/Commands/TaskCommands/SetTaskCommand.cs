@@ -1,6 +1,6 @@
 using Gbm.Git;
 
-namespace Gbm.Commands
+namespace Gbm.Commands.TaskCommands
 {
 	public class SetTaskCommand : ITaskCommand
 	{
