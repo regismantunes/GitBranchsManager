@@ -16,6 +16,7 @@ namespace Gbm.Commands.PullRequestCommands
                 MyConsole.WriteError("❌ Operation cancelled by user.");
                 return 1;
             }
+            MyConsole.BackToPreviousLine();
             MyConsole.WriteInfo($"→ Summary: {taskSummary}");
 
             var taskDescription = GetDescription();
@@ -24,6 +25,7 @@ namespace Gbm.Commands.PullRequestCommands
                 MyConsole.WriteError("❌ Operation cancelled by user.");
                 return 1;
             }
+            MyConsole.BackToPreviousLine();
             MyConsole.WriteInfo($"→ Description: {taskDescription}");
             await fakeJiraClient.SaveTaskInfoAsync(taskId, taskSummary, taskDescription, cancellationToken);
             MyConsole.WriteSucess($"✅ Task info was sucessfuly saved");

@@ -47,6 +47,13 @@
             Console.ForegroundColor = originalColor;
         }
 
+        public static void BackToPreviousLine()
+        {
+            Console.SetCursorPosition(0, Console.CursorTop - 1);
+            Console.Write(new string(' ', Console.WindowWidth));
+            Console.SetCursorPosition(0, Console.CursorTop - 1);
+        }
+
         public static void WriteEmptyLine()
         {
             Console.WriteLine();

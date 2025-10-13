@@ -2,7 +2,6 @@
 using Gbm.Git;
 using Gbm.GitHub;
 using Gbm.Jira;
-using System.Diagnostics;
 
 namespace Gbm.Commands.Args
 {
@@ -120,9 +119,7 @@ namespace Gbm.Commands.Args
 		}
 
 		private static FakeJiraClient GetFakeJiraClient(string basePath, string jiraDomain) =>
-            new FakeJiraClient(
-                jiraDomain,
-				Path.Combine(basePath, "jiratasks.json"));
+            new (jiraDomain, Path.Combine(basePath, "jiratasks.json"));
 
 		private static string GetEnvironmentVariableOrThrow(EnvironmentVariable variable)
 		{
@@ -132,7 +129,7 @@ namespace Gbm.Commands.Args
 				value;
         }
 
-		private struct EnvironmentVariableCommandInfo
+		private readonly struct EnvironmentVariableCommandInfo
 		{
 			public string Action { get; init; }
 			public string ErrorMessage { get; init; }
