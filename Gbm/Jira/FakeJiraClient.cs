@@ -7,6 +7,7 @@ namespace Gbm.Jira
     {
         private readonly string _jiraDomain;
         private readonly string _jsonTaskFile;
+        private readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = true };
 
         public FakeJiraClient(string jiraDomain, string jsonTaskFile)
         {
@@ -35,9 +36,12 @@ namespace Gbm.Jira
                 await GetTaskInfosAsync(cancellationToken) :
                 [];
 
+            if (jsonList.Exists(t => t.Id == taskId))
+                jsonList.RemoveAll(t => t.Id == taskId);
+
             jsonList.Add(new TaskInfo(taskId, taskSummary, taskDescription, GetTaskUrl(taskId)));
 
-            var json = JsonSerializer.Serialize(jsonList, new JsonSerializerOptions { WriteIndented = true });
+            var json = JsonSerializer.Serialize(jsonList, _jsonOptions);
             await File.WriteAllTextAsync(_jsonTaskFile, json, cancellationToken);
         }
 
