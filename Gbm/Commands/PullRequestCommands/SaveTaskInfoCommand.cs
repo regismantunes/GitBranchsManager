@@ -1,11 +1,11 @@
-﻿using Gbm.Jira;
+﻿using Gbm.Persistence.Repositories.Interfaces;
 using TextCopy;
 
 namespace Gbm.Commands.PullRequestCommands
 {
     public class SaveTaskInfoCommand
     {
-        public async Task<int> ExecuteAsync(FakeJiraClient fakeJiraClient, string taskId, CancellationToken cancellationToken = default)
+        public async Task<int> ExecuteAsync(ITaskInfoRepository repository, string taskId, CancellationToken cancellationToken = default)
         {
             MyConsole.WriteHeader($"--- Saving Task Info ---");
             MyConsole.WriteStep($"Please, inform the task details:");
@@ -27,7 +27,7 @@ namespace Gbm.Commands.PullRequestCommands
             }
             MyConsole.BackToPreviousLine();
             MyConsole.WriteInfo($"→ Description: {taskDescription}");
-            await fakeJiraClient.SaveTaskInfoAsync(taskId, taskSummary, taskDescription, cancellationToken);
+            await repository.SaveAsync(taskId, taskSummary, taskDescription, cancellationToken);
             MyConsole.WriteSucess($"✅ Task info was sucessfuly saved");
             return 0;
         }

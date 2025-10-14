@@ -3,6 +3,7 @@ using Gbm.Commands.EnvironmentCommands;
 using Gbm.Commands.PullRequestCommands;
 using Gbm.Commands.TaskCommands;
 using Gbm.Jira;
+using Gbm.Persistence.Repositories.Interfaces;
 using System.Threading.Tasks;
 
 namespace Gbm.Commands
@@ -69,16 +70,17 @@ namespace Gbm.Commands
                 if (args.Repositories is null) throw new InvalidOperationException("Repositories is not initialized.");
                 if (args.GitHubClient is null) throw new InvalidOperationException("GitHubClient is not initialized.");
                 if (args.JiraClient is null) throw new InvalidOperationException("JiraClient is not initialized.");
+                if (args.PullRequestInfoRepository is null) throw new InvalidOperationException("PullRequestInfoRepository is not initialized.");
 
-                return await openPrsTask.ExecuteAsync(args.GitTool, args.TaskBranch, args.Repositories, args.GitHubClient, args.JiraClient);
+                return await openPrsTask.ExecuteAsync(args.GitTool, args.TaskBranch, args.Repositories, args.GitHubClient, args.JiraClient, args.PullRequestInfoRepository);
             }
 
             if (command is SaveTaskInfoCommand saveTaskInfo)
             {
-                if (args.JiraClient is not FakeJiraClient fakeJiraClient) throw new InvalidOperationException("JiraClient is not initialized.");
+                if (args.TaskInfoRepository is not ITaskInfoRepository taskInfoRepository) throw new InvalidOperationException("TaskInfoRepository is not initialized.");
                 if (args.TaskId is null) throw new InvalidOperationException("TaskId is not initialized.");
                 
-                return await saveTaskInfo.ExecuteAsync(fakeJiraClient, args.TaskId);
+                return await saveTaskInfo.ExecuteAsync(taskInfoRepository, args.TaskId);
             }
 
             if (command is HelpCommand helpCommand)

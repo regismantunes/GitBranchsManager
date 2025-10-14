@@ -2,6 +2,8 @@
 using Gbm.Git;
 using Gbm.GitHub;
 using Gbm.Jira;
+using Gbm.Persistence.Repositories;
+using Gbm.Persistence.Repositories.Interfaces;
 
 namespace Gbm.Commands.Args
 {
@@ -53,8 +55,8 @@ namespace Gbm.Commands.Args
 			if (action == "-t")
 			{
                 var jiraDomain = GetEnvironmentVariableOrThrow(EnvironmentVariable.JiraDomain);
-				var fakeJiraClient = GetFakeJiraClient(basePath, jiraDomain);
-				return new ArgsContext(action, JiraClient: fakeJiraClient, TaskId: taskId);
+                var taskInfoRepository = GetTaskInfoRepository(basePath, jiraDomain);
+                return new ArgsContext(action, TaskInfoRepository: taskInfoRepository, TaskId: taskId);
             }
 
             // Get repositories list (if any)
@@ -81,14 +83,12 @@ namespace Gbm.Commands.Args
 					throw new ArgsValidationException($"No repositories found with branch '{taskBranch}'.");
             }
 
-            // Initialize GitHubClient and JiraClient if action is -pr
-            GitHubClient? gitHubClient = null;
-			IJiraClient? jiraClient = null;
+            // Initialize GitHubClient, JiraClient and PullRequestInfoRepository if action is -pr
             if (action == "-pr")
 			{
 				var gitHubToken = GetEnvironmentVariableOrThrow(EnvironmentVariable.GitHubToken);
 				var repositoriesOwner = GetEnvironmentVariableOrThrow(EnvironmentVariable.GitHubRepositoriesOwner);
-				gitHubClient = new GitHubClient(gitHubToken, repositoriesOwner);
+				var gitHubClient = new GitHubClient(gitHubToken, repositoriesOwner);
 
                 var jiraDomain = GetEnvironmentVariableOrThrow(EnvironmentVariable.JiraDomain);
                 var jiraConsumerKey = EnvironmentVariable.JiraConsumerKey.GetValue();
@@ -97,7 +97,9 @@ namespace Gbm.Commands.Args
 				var jiraTokenSecrety = EnvironmentVariable.JiraTokenSecrety.GetValue();
                 var jiraUserMail = EnvironmentVariable.JiraUserMail.GetValue();
 				var jiraUserPassword = EnvironmentVariable.JiraUserPassword.GetValue();
-				if (jiraConsumerKey is not null &&
+
+                IJiraClient jiraClient = null!;
+                if (jiraConsumerKey is not null &&
 					jiraConsumerSecrety is not null &&
 					jiraAcccessToken is not null &&
 					jiraTokenSecrety is not null)
@@ -111,17 +113,25 @@ namespace Gbm.Commands.Args
                 }
 				else
 				{
-					jiraClient = GetFakeJiraClient(basePath, jiraDomain);
+					var taskInfoRepository = GetTaskInfoRepository(basePath, jiraDomain);
+                    jiraClient = new FakeJiraClient(taskInfoRepository);
 				}
+
+                var pullRequestInfoRepository = GetPullRequestInfoRepository(basePath);
+
+                return new ArgsContext(action, gitTool, taskBranch, reposArg, gitHubClient, jiraClient, PullRequestInfoRepository: pullRequestInfoRepository);
             }
 
-			return new ArgsContext(action, gitTool, taskBranch, reposArg, gitHubClient, jiraClient);
+			return new ArgsContext(action, gitTool, taskBranch, reposArg);
 		}
 
-		private static FakeJiraClient GetFakeJiraClient(string basePath, string jiraDomain) =>
-            new (jiraDomain, Path.Combine(basePath, "jiratasks.json"));
+		private static ITaskInfoRepository GetTaskInfoRepository(string basePath, string jiraDomain) =>
+            new TaskInfoRepository(jiraDomain, Path.Combine(basePath, "tasksinfo.json"));
 
-		private static string GetEnvironmentVariableOrThrow(EnvironmentVariable variable)
+        private static IPullRequestInfoRepository GetPullRequestInfoRepository(string basePath) =>
+            new PullRequestInfoRepository(Path.Combine(basePath, "pullrequestsinfo.json"));
+
+        private static string GetEnvironmentVariableOrThrow(EnvironmentVariable variable)
 		{
 			var value = variable.GetValue();
             return string.IsNullOrWhiteSpace(value) ? 

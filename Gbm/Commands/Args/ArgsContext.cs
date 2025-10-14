@@ -1,6 +1,7 @@
 using Gbm.Git;
 using Gbm.GitHub;
 using Gbm.Jira;
+using Gbm.Persistence.Repositories.Interfaces;
 
 namespace Gbm.Commands.Args
 {
@@ -12,6 +13,8 @@ namespace Gbm.Commands.Args
         GitHubClient? GitHubClient = null,
         IJiraClient? JiraClient = null,
         string? Environment = null,
-        string? TaskId = null
+        string? TaskId = null,
+        ITaskInfoRepository? TaskInfoRepository = null,
+        IPullRequestInfoRepository? PullRequestInfoRepository = null
     );
 }

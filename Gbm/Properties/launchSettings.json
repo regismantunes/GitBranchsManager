@@ -2,7 +2,7 @@
   "profiles": {
     "Gbm": {
       "commandName": "Project",
-      "commandLineArgs": "-t SSM-1108"
+      "commandLineArgs": "-pr SSM-1108 package-betenbough-utility"
     }
   }
 }

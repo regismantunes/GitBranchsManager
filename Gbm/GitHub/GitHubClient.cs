@@ -1,4 +1,4 @@
-﻿using Gbm.Jira;
+﻿using Gbm.Persistence.Entities;
 using System.Text;
 using System.Text.Json;
 
@@ -24,29 +24,29 @@ namespace Gbm.GitHub
             return httpClient;
         }
 
-        private string CreateLink(string text, string url)
+        private string CreateTaskLink(string text, string url)
         {
             return $"[{text}]({url})";
         }
 
         private string CreatePullRequestBody(TaskInfo taskInfo, string? relatedPRsText = null)
         {
-            var taskLink = CreateLink(taskInfo.Id, taskInfo.Url);
+            var taskLink = CreateTaskLink(taskInfo.Id, taskInfo.Url);
             var body = $"This PR implements the {taskLink} feature.\r\r{taskInfo.Description}";
             if (!string.IsNullOrWhiteSpace(relatedPRsText))
                 body += $"\r\r{relatedPRsText}";
             return body;
         }
 
-        public async Task<PullRequestInfo> CreatePullRequestAsync(string repo, string branchName, string baseBranch, TaskInfo taskInfo)
+        public async Task<PullRequestInfo> CreatePullRequestAsync(string repo, string branchName, string baseBranch, TaskInfo taskInfo, CancellationToken cancellationToken = default)
         {
             using var httpClient = CreateHttpClient();
 
-            var taskLink = CreateLink(taskInfo.Id, taskInfo.Url);
+            var taskLink = CreateTaskLink(taskInfo.Id, taskInfo.Url);
 
             var prBody = new
             {
-                title = $"{taskLink} {taskInfo.Summary}",
+                title = $"[{taskInfo.Id}] {taskInfo.Summary}",
                 body = CreatePullRequestBody(taskInfo),
                 head = branchName,
                 @base = baseBranch
@@ -55,9 +55,9 @@ namespace Gbm.GitHub
             var json = JsonSerializer.Serialize(prBody);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var response = await httpClient.PostAsync($"https://api.github.com/repos/{owner}/{repo}/pulls", content);
+            var response = await httpClient.PostAsync($"https://api.github.com/repos/{owner}/{repo}/pulls", content, cancellationToken);
 
-            var responseContent = await response.Content.ReadAsStringAsync();
+            var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
             if (!response.IsSuccessStatusCode)
                 throw new Exception($"Failed to create PR in {repo}: {response.StatusCode} - {responseContent}");
             
@@ -65,10 +65,10 @@ namespace Gbm.GitHub
                 ?? throw new Exception($"Failed to deserialize PR response for {repo}");
 
             MyConsole.WriteSucess($"✅ PR created in {repo}: {prData.HtmlUrl}");
-            return new PullRequestInfo(repo, prData.Number, prData.HtmlUrl);
+            return new PullRequestInfo(taskInfo.Id, repo, prData.Number, prData.HtmlUrl);
         }
 
-        public async Task UpdatePullRequestAsync(string repo, int prNumber, string relatedPRsText, TaskInfo taskInfo)
+        public async Task UpdatePullRequestAsync(string repo, int prNumber, string relatedPRsText, TaskInfo taskInfo, CancellationToken cancellationToken = default)
         {
             using var httpClient = CreateHttpClient();
 
@@ -80,7 +80,7 @@ namespace Gbm.GitHub
             var json = JsonSerializer.Serialize(updateBody);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var response = await httpClient.PatchAsync($"https://api.github.com/repos/{owner}/{repo}/pulls/{prNumber}", content);
+            var response = await httpClient.PatchAsync($"https://api.github.com/repos/{owner}/{repo}/pulls/{prNumber}", content, cancellationToken);
 
             if (!response.IsSuccessStatusCode)
             {

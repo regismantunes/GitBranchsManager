@@ -1,17 +1,17 @@
 using Gbm.Git;
 using Gbm.GitHub;
 using Gbm.Jira;
+using Gbm.Persistence.Entities;
+using Gbm.Persistence.Repositories.Interfaces;
 
 namespace Gbm.Commands.PullRequestCommands
 {
     public class OpenPullRequestsTaskCommand
     {
-        public async Task<int> ExecuteAsync(GitTool gitTool, string taskBranch, string[] repositories, GitHubClient gitHubClient, IJiraClient jiraClient, CancellationToken cancellationToken = default)
+        public async Task<int> ExecuteAsync(GitTool gitTool, string taskBranch, string[] repositories, GitHubClient gitHubClient, IJiraClient jiraClient, IPullRequestInfoRepository repository, CancellationToken cancellationToken = default)
         {
             try
             {
-                var createdPRs = new List<PullRequestInfo>();
-
                 // Create PRs for each repository
                 MyConsole.WriteHeader($"--- Getting Task Info ---");
                 var taskId = gitTool.GetTaskIdFromBranch(taskBranch);
@@ -26,27 +26,31 @@ namespace Gbm.Commands.PullRequestCommands
                 MyConsole.WriteHeader($"--- Creating PRs ---");
                 foreach (var repo in repositories)
                 {
+                    if (await repository.ExistsAsync(taskId, repo, cancellationToken))
+                        continue;
+
                     MyConsole.WriteStep($"→ Creating PR in {repo}");
                     gitTool.SetRepository(repo);
                     var baseBranch = await gitTool.GetMainBranchAsync();
-                    var pr = await gitHubClient.CreatePullRequestAsync(repo, taskBranch, baseBranch, taskInfo);
-                    createdPRs.Add(pr);
+                    var pr = await gitHubClient.CreatePullRequestAsync(repo, taskBranch, baseBranch, taskInfo, cancellationToken);
+                    await repository.SaveAsync(pr, cancellationToken);
                 }
 
                 // Generate related PRs text
-                var relatedPRsText = string.Join('\n', createdPRs.Select(pr => $"- Related PR: [{pr.Repository}]({pr.Url})"));
+                var relatedPRs = await repository.GetByTaskIdAsync(taskId, cancellationToken);
+                var relatedPRsText = string.Join('\n', relatedPRs.Select(pr => $"- Related PR: [{pr.Repository}]({pr.Url})"));
 
                 // Update each PR with related links
-                foreach (var pr in createdPRs)
+                foreach (var pr in relatedPRs)
                 {
                     MyConsole.WriteStep($"→ Updating PR in {pr.Repository} with related links");
-                    await gitHubClient.UpdatePullRequestAsync(pr.Repository, pr.Number, relatedPRsText, taskInfo);
+                    await gitHubClient.UpdatePullRequestAsync(pr.Repository, pr.Number, relatedPRsText, taskInfo, cancellationToken);
                 }
 
                 MyConsole.WriteSucess("🚀 All PRs created and updated with related links.");
                 MyConsole.WriteEmptyLine();
-                MyConsole.WriteInfo($"{taskBranch} PRs:");
-                foreach (var pr in createdPRs)
+                MyConsole.WriteInfo($"[{taskId}] {taskInfo.Summary}");
+                foreach (var pr in relatedPRs)
                 {
                     MyConsole.WriteInfo($"- {pr.Repository}: {pr.Url}");
                 }

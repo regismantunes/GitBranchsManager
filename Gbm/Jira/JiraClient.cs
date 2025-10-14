@@ -1,4 +1,6 @@
-﻿namespace Gbm.Jira
+﻿using Gbm.Persistence.Entities;
+
+namespace Gbm.Jira
 {
     public class JiraClient : IJiraClient
     {
@@ -38,7 +40,7 @@
 
         private string GetJiraUrl() => $"https://{_jiraDomain}.atlassian.net";
 
-        public string GetTaskUrl(string taskId) => $"{GetJiraUrl()}/browse/{taskId}";
+        private string GetTaskUrl(string taskId) => $"{GetJiraUrl()}/browse/{taskId}";
 
         public async Task<TaskInfo?> GetTaskInfoAsync(string taskId, CancellationToken cancellationToken = default)
         {
