@@ -31,7 +31,8 @@ namespace Gbm.Commands
             { "-jp", typeof(SetJiraUserPasswordCommand) },
             { "-jc", typeof(SetJiraConsumerKeyCommand) },
             { "-js", typeof(SetJiraConsumerSecretyCommand) },
-            { "-ja", typeof(SetJiraAccessTokenCommand) }
+            { "-ja", typeof(SetJiraAccessTokenCommand) },
+            { "-pri", typeof(ListPullRequestInfoByTaskIdCommand) }
         };
         public static object? Create(string action)
         {
@@ -81,6 +82,15 @@ namespace Gbm.Commands
                 if (args.TaskId is null) throw new InvalidOperationException("TaskId is not initialized.");
                 
                 return await saveTaskInfo.ExecuteAsync(taskInfoRepository, args.TaskId);
+            }
+
+            if (command is ListPullRequestInfoByTaskIdCommand listPullRequestInfoByTaskId)
+            {
+                if (args.TaskId is null) throw new InvalidOperationException("TaskId is not initialized.");
+                if (args.TaskInfoRepository is not ITaskInfoRepository taskInfoRepository) throw new InvalidOperationException("TaskInfoRepository is not initialized.");
+                if (args.PullRequestInfoRepository is not IPullRequestInfoRepository pullRequestInfoRepository) throw new InvalidOperationException("PullRequestInfoRepository is not initialized.");
+
+                return await listPullRequestInfoByTaskId.ExecuteAsync(args.TaskId, taskInfoRepository, pullRequestInfoRepository);
             }
 
             if (command is HelpCommand helpCommand)

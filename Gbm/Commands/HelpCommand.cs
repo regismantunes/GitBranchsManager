@@ -22,6 +22,7 @@
             MyConsole.WriteInfo("  gbm -p <TaskId> [Repos...]          Push feature branches");
             MyConsole.WriteInfo("  gbm -d <TaskId> [Repos...]          Merge feature into develop and push");
             MyConsole.WriteInfo("  gbm -pr <TaskId> [Repos...]         Create pull requests for feature branches");
+            MyConsole.WriteInfo("  gbm -pri <TaskId>                   List pull requests by TaskId");
             MyConsole.WriteInfo("  gbm -r <TaskId> [Repos...]          Remove local feature branches");
             MyConsole.WriteEmptyLine();
             MyConsole.WriteInfo("Notes: Do not prefix TaskId or repos with parameter names; provide them positionally.");

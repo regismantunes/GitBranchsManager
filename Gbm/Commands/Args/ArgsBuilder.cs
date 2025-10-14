@@ -59,6 +59,14 @@ namespace Gbm.Commands.Args
                 return new ArgsContext(action, TaskInfoRepository: taskInfoRepository, TaskId: taskId);
             }
 
+			if (action == "-pri")
+			{
+				var jiraDomain = GetEnvironmentVariableOrThrow(EnvironmentVariable.JiraDomain);
+				var taskInfoRepository = GetTaskInfoRepository(basePath, jiraDomain);
+				var pullRequestInfoRepository = GetPullRequestInfoRepository(basePath);
+				return new ArgsContext(action, TaskInfoRepository: taskInfoRepository, PullRequestInfoRepository: pullRequestInfoRepository, TaskId: taskId);
+            }
+
             // Get repositories list (if any)
             var reposArg = args.Length > 2 ? args[2..] : [];
 

@@ -9,6 +9,7 @@ namespace Gbm.GitHub
         public string Owner { get; } = owner;
 
         private string GitHubToken { get; } = githubToken;
+
         private JsonSerializerOptions JsonOptions { get; } = new()
         {
             PropertyNameCaseInsensitive = true
@@ -17,7 +18,7 @@ namespace Gbm.GitHub
         private HttpClient CreateHttpClient()
         {
             var httpClient = new HttpClient();
-            httpClient.DefaultRequestHeaders.Add("Authorization", $"token {GitHubToken}");
+            httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {GitHubToken}");
             httpClient.DefaultRequestHeaders.Add("Accept", "application/vnd.github.v3+json");
             httpClient.DefaultRequestHeaders.Add("User-Agent", "Gbm");
             httpClient.DefaultRequestHeaders.Add("X-GitHub-Api-Version", "2022-11-28");
