@@ -1,5 +1,4 @@
-﻿using Gbm.Persistence.Entities;
-using Gbm.Persistence.Repositories.Interfaces;
+﻿using Gbm.Persistence.Repositories.Interfaces;
 
 namespace Gbm.Commands.PullRequestCommands
 {

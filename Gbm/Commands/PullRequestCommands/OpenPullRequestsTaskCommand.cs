@@ -38,7 +38,9 @@ namespace Gbm.Commands.PullRequestCommands
 
                 // Generate related PRs text
                 var relatedPRs = await repository.GetByTaskIdAsync(taskId, cancellationToken);
-                var relatedPRsText = string.Join('\n', relatedPRs.Select(pr => $"- Related PR: [{pr.Repository}]({pr.Url})"));
+                var relatedPRsText = relatedPRs.Count == 0 ?
+                    string.Empty :
+                    string.Concat("**Related PRs:**\n", string.Join('\n', relatedPRs.Select(pr => $"- [{pr.Repository}]({pr.Url})")));
 
                 // Update each PR with related links
                 foreach (var pr in relatedPRs)
