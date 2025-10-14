@@ -93,7 +93,7 @@ namespace Gbm.Git
                 if (await RunGitOkAsync($"checkout {branch}")) return;
                 MyConsole.WriteError($"❌ It was not possible to checkout to '{branch}' branch.");
                 MyConsole.WriteError("🛑 Please resolve the not commited files, then press ENTER to continue...");
-                Console.ReadLine();
+                MyConsole.ReadLineThenClear();
             }
         }
 
@@ -125,12 +125,12 @@ namespace Gbm.Git
             if (await RunGitOkAsync($"pull origin {branchFrom}")) return;
             MyConsole.WriteError($"❌ Merge conflict detected while getting changes from '{branchFrom}' into '{branchTo}'.");
             MyConsole.WriteError("🛑 Please resolve the conflicts manually, then press ENTER to continue...");
-            Console.ReadLine();
+            MyConsole.ReadLineThenClear();
             while (await HasUncommittedChangesAsync())
             {
                 MyConsole.WriteError($"❌ There is still uncommitted changes.");
                 MyConsole.WriteError("🛑 Please resolve the not commited files, then press ENTER to continue...");
-                Console.ReadLine();
+                MyConsole.ReadLineThenClear();
             }
         }
 

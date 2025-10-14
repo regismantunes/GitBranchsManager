@@ -16,7 +16,6 @@ namespace Gbm.Commands.PullRequestCommands
                 MyConsole.WriteError("❌ Operation cancelled by user.");
                 return 1;
             }
-            MyConsole.BackToPreviousLine();
             MyConsole.WriteInfo($"→ Summary: {taskSummary}");
 
             var taskDescription = GetDescription();
@@ -25,7 +24,6 @@ namespace Gbm.Commands.PullRequestCommands
                 MyConsole.WriteError("❌ Operation cancelled by user.");
                 return 1;
             }
-            MyConsole.BackToPreviousLine();
             MyConsole.WriteInfo($"→ Description: {taskDescription}");
             await repository.SaveAsync(taskId, taskSummary, taskDescription, cancellationToken);
             MyConsole.WriteSucess($"✅ Task info was sucessfuly saved");
@@ -38,7 +36,7 @@ namespace Gbm.Commands.PullRequestCommands
             string? taskSummary;
             while (true)
             {
-                taskSummary = Console.ReadLine();
+                taskSummary = MyConsole.ReadLineThenClear();
                 if (string.IsNullOrWhiteSpace(taskSummary))
                     taskSummary = ClipboardService.GetText();
                 if (!string.IsNullOrWhiteSpace(taskSummary))
@@ -61,7 +59,7 @@ namespace Gbm.Commands.PullRequestCommands
             string? taskDescription;
             while (true)
             {
-                taskDescription = Console.ReadLine();
+                taskDescription = MyConsole.ReadLineThenClear();
                 if (string.IsNullOrWhiteSpace(taskDescription))
                     taskDescription = ClipboardService.GetText();
                 if (!string.IsNullOrWhiteSpace(taskDescription))

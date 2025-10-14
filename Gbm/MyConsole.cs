@@ -54,6 +54,13 @@
             Console.SetCursorPosition(0, Console.CursorTop - 1);
         }
 
+        public static string ReadLineThenClear()
+        {
+            var input = Console.ReadLine() ?? string.Empty;
+            BackToPreviousLine();
+            return input;
+        }
+
         public static void WriteEmptyLine()
         {
             Console.WriteLine();
