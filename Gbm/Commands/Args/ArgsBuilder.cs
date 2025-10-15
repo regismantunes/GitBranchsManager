@@ -127,7 +127,7 @@ namespace Gbm.Commands.Args
 
                 var pullRequestInfoRepository = GetPullRequestInfoRepository(basePath);
 
-                return new ArgsContext(action, gitTool, taskBranch, reposArg, gitHubClient, jiraClient, PullRequestInfoRepository: pullRequestInfoRepository);
+                return new ArgsContext(action, gitTool, taskBranch, reposArg, gitHubClient, jiraClient, PullRequestInfoRepository: pullRequestInfoRepository, TaskId: taskId);
             }
 
 			return new ArgsContext(action, gitTool, taskBranch, reposArg);

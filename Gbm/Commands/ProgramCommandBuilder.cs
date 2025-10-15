@@ -72,8 +72,9 @@ namespace Gbm.Commands
                 if (args.GitHubClient is null) throw new InvalidOperationException("GitHubClient is not initialized.");
                 if (args.JiraClient is null) throw new InvalidOperationException("JiraClient is not initialized.");
                 if (args.PullRequestInfoRepository is null) throw new InvalidOperationException("PullRequestInfoRepository is not initialized.");
+                if (args.TaskId is null) throw new InvalidOperationException("TaskId is not initialized.");
 
-                return await openPrsTask.ExecuteAsync(args.GitTool, args.TaskBranch, args.Repositories, args.GitHubClient, args.JiraClient, args.PullRequestInfoRepository);
+                return await openPrsTask.ExecuteAsync(args.GitTool, args.TaskBranch, args.Repositories, args.GitHubClient, args.JiraClient, args.PullRequestInfoRepository, args.TaskId);
             }
 
             if (command is SaveTaskInfoCommand saveTaskInfo)

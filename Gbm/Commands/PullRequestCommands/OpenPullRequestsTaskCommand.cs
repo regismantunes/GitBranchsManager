@@ -2,19 +2,17 @@ using Gbm.Git;
 using Gbm.GitHub;
 using Gbm.Jira;
 using Gbm.Persistence.Repositories.Interfaces;
-using System.Xml.Linq;
 
 namespace Gbm.Commands.PullRequestCommands
 {
     public class OpenPullRequestsTaskCommand
     {
-        public async Task<int> ExecuteAsync(GitTool gitTool, string taskBranch, string[] repositories, GitHubClient gitHubClient, IJiraClient jiraClient, IPullRequestInfoRepository repository, CancellationToken cancellationToken = default)
+        public async Task<int> ExecuteAsync(GitTool gitTool, string taskBranch, string[] repositories, GitHubClient gitHubClient, IJiraClient jiraClient, IPullRequestInfoRepository repository, string taskId, CancellationToken cancellationToken = default)
         {
             try
             {
                 // Create PRs for each repository
                 MyConsole.WriteHeader($"--- Getting Task Info ---");
-                var taskId = gitTool.GetTaskIdFromBranch(taskBranch);
                 var taskInfo = await jiraClient.GetTaskInfoAsync(taskId, cancellationToken);
                 if (taskInfo == null)
                 {
