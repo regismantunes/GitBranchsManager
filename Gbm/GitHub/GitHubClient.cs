@@ -66,7 +66,6 @@ namespace Gbm.GitHub
             var prData = JsonSerializer.Deserialize<GitHubPrResponse>(responseContent, JsonOptions)
                 ?? throw new Exception($"Failed to deserialize PR response for {repo}");
 
-            MyConsole.WriteSucess($"✅ PR created in {repo}: {prData.HtmlUrl}");
             return new PullRequestInfo(taskInfo.Id, repo, prData.Number, prData.HtmlUrl);
         }
 
@@ -89,8 +88,6 @@ namespace Gbm.GitHub
                 var errorContent = await response.Content.ReadAsStringAsync();
                 throw new Exception($"Failed to update PR in {repo}: {response.StatusCode} - {errorContent}");
             }
-
-            MyConsole.WriteSucess($"✏️ PR updated in {repo}");
         }
 
         private class GitHubPrResponse

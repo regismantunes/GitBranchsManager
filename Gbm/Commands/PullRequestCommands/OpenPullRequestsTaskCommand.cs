@@ -2,6 +2,7 @@ using Gbm.Git;
 using Gbm.GitHub;
 using Gbm.Jira;
 using Gbm.Persistence.Repositories.Interfaces;
+using System.Xml.Linq;
 
 namespace Gbm.Commands.PullRequestCommands
 {
@@ -32,6 +33,7 @@ namespace Gbm.Commands.PullRequestCommands
                     gitTool.SetRepository(repo);
                     var baseBranch = await gitTool.GetMainBranchAsync();
                     var pr = await gitHubClient.CreatePullRequestAsync(repo, taskBranch, baseBranch, taskInfo, cancellationToken);
+                    MyConsole.WriteStep($"→ PR successful created in {repo}: {pr.Url}");
                     await repository.SaveAsync(pr, cancellationToken);
                 }
 
@@ -46,6 +48,7 @@ namespace Gbm.Commands.PullRequestCommands
                 {
                     MyConsole.WriteStep($"→ Updating PR in {pr.Repository} with related links");
                     await gitHubClient.UpdatePullRequestAsync(pr.Repository, pr.Number, relatedPRsText, taskInfo, cancellationToken);
+                    MyConsole.WriteStep($"→ PR successful updated in {pr.Repository}");
                 }
 
                 MyConsole.WriteSucess("🚀 All PRs created and updated with related links.");
