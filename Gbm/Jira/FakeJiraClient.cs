@@ -1,5 +1,4 @@
-﻿
-using Gbm.Persistence.Entities;
+﻿using Gbm.Persistence.Entities;
 using Gbm.Persistence.Repositories.Interfaces;
 
 namespace Gbm.Jira

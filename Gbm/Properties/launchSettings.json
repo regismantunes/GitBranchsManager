@@ -2,7 +2,7 @@
   "profiles": {
     "Gbm": {
       "commandName": "Project",
-      "commandLineArgs": "-pr SSM-1108 usersclientsdk"
+      "commandLineArgs": "-pr SSM-935"
     }
   }
 }

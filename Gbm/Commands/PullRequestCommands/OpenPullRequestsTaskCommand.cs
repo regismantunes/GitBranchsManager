@@ -1,7 +1,6 @@
 using Gbm.Git;
 using Gbm.GitHub;
 using Gbm.Jira;
-using Gbm.Persistence.Entities;
 using Gbm.Persistence.Repositories.Interfaces;
 
 namespace Gbm.Commands.PullRequestCommands

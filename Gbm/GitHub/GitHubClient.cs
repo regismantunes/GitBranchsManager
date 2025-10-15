@@ -1,6 +1,7 @@
 ﻿using Gbm.Persistence.Entities;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Gbm.GitHub
 {
@@ -94,7 +95,10 @@ namespace Gbm.GitHub
 
         private class GitHubPrResponse
         {
+            [JsonPropertyName("number")]
             public int Number { get; set; }
+            
+            [JsonPropertyName("html_url")]
             public string HtmlUrl { get; set; } = string.Empty;
         }
     }
