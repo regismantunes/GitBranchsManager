@@ -13,6 +13,7 @@ namespace Gbm.Commands.EnvironmentCommands
             Order = 8)]
         public int Execute(string value)
         {
+            MyConsole.WriteHeader("⚙️ Updating configuration: Jira Access Token...");
             EnvironmentVariable.JiraAccessToken.SetValue(value);
             MyConsole.WriteSucess($"✅ Jira access token was updated (User scope)");
             return 0;

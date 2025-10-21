@@ -13,6 +13,7 @@ namespace Gbm.Commands.EnvironmentCommands
             Order = 2)]
         public int Execute(string value)
         {
+            MyConsole.WriteHeader("⚙️ Updating configuration: GitHub Repositories Owner...");
             EnvironmentVariable.GitHubRepositoriesOwner.SetValue(value);
             MyConsole.WriteSucess($"✅ Repositories owner updated to '{value}' (User scope)");
             return 0;

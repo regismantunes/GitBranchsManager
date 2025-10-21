@@ -13,6 +13,7 @@ namespace Gbm.Commands.EnvironmentCommands
             Order = 0)]
         public int Execute(string value)
         {
+            MyConsole.WriteHeader("⚙️ Updating configuration: Base Path...");
             EnvironmentVariable.BasePath.SetValue(value);
             MyConsole.WriteSucess($"✅ Base path updated to '{value}' (User scope)");
             return 0;

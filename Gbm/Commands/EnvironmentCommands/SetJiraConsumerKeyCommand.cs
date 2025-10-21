@@ -13,6 +13,7 @@ namespace Gbm.Commands.EnvironmentCommands
             Order = 6)]
         public int Execute(string value)
         {
+            MyConsole.WriteHeader("⚙️ Updating configuration: Jira Consumer Key...");
             EnvironmentVariable.JiraConsumerKey.SetValue(value);
             MyConsole.WriteSucess($"✅ Jira Consumer Key updated to '{value}' (User scope)");
             return 0;

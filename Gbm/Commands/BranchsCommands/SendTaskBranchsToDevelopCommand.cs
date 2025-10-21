@@ -13,6 +13,7 @@ namespace Gbm.Commands.BranchsCommands
         public async Task<int> ExecuteAsync(string taskBranch, string[] repositories, CancellationToken cancellationToken = default)
         {
             gitTool.ShowGitOutput = true;
+            MyConsole.WriteHeader("⬅️ Merging task branches into develop...");
             foreach (var repo in repositories)
             {
                 if (repo.EndsWith("sdk", StringComparison.OrdinalIgnoreCase)) continue;

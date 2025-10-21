@@ -5,13 +5,15 @@ namespace Gbm.Commands.PullRequestCommands
 {
     public class ListPullRequestInfoByTaskIdCommand(ITaskInfoRepository taskInfoRepository, IPullRequestInfoRepository pullRequestInfoRepository)
     {
-        [CommandAsync("-pri",
+        [CommandAsync(
+            "-pri",
             Description = "List pull requests by TaskId",
             Example = "gbm -pri <TaskId>",
             Group = CommandGroups.PullRequests,
             Order = 1)]
         public async Task<int> ExecuteAsync(string taskId, CancellationToken cancellationToken = default)
         {
+            MyConsole.WriteHeader("🧾 Listing pull requests by TaskId...");
             if (string.IsNullOrWhiteSpace(taskId))
                 throw new ArgumentException("Task ID cannot be null or empty.", nameof(taskId));
 
