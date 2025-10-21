@@ -1,4 +1,4 @@
-﻿using Gbm.Persistence.Environment;
+using Gbm.Persistence.Environment;
 using Gbm.Services.Extensions;
 using RA.Console.DependecyInjection.Attributes;
 
@@ -6,7 +6,11 @@ namespace Gbm.Commands.EnvironmentCommands
 {
     public class SetJiraUserMailCommand
     {
-        [Command("-ju", Description = "Set Jira user email", Example = "gbm -ju <UserMail>")]
+        [Command("-ju",
+            Description = "Set Jira user email",
+            Example = "gbm -ju <UserMail>",
+            Group = CommandGroups.Configuration,
+            Order = 4)]
         public int Execute(string value)
         {
             EnvironmentVariable.JiraUserMail.SetValue(value);

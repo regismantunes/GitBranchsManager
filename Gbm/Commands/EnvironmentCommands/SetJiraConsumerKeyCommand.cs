@@ -1,4 +1,4 @@
-﻿using Gbm.Persistence.Environment;
+using Gbm.Persistence.Environment;
 using Gbm.Services.Extensions;
 using RA.Console.DependecyInjection.Attributes;
 
@@ -6,7 +6,11 @@ namespace Gbm.Commands.EnvironmentCommands
 {
     public class SetJiraConsumerKeyCommand
     {
-        [Command("-jc", Description = "Set Jira Consumer Key", Example = "gbm -jc <ConsumerKey>")]
+        [Command("-jc",
+            Description = "Set Jira Consumer Key",
+            Example = "gbm -jc <ConsumerKey>",
+            Group = CommandGroups.Configuration,
+            Order = 6)]
         public int Execute(string value)
         {
             EnvironmentVariable.JiraConsumerKey.SetValue(value);

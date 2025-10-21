@@ -8,7 +8,11 @@ namespace Gbm.Commands.PullRequestCommands
 {
     public class OpenPullRequestsTaskCommand(IJiraClient jiraClient, IPullRequestInfoRepository repository, IGitHubClient gitHubClient, IGitTool gitTool)
     {
-        [CommandAsyncWithArgsBuilderAsync<TaskIdRepositoriesArgsBuilder>("-pr", Description = "Create pull requests for task branches", Example = "gbm -pr <TaskId> [Repos...]")]
+        [CommandAsyncWithArgsBuilderAsync<TaskIdRepositoriesArgsBuilder>("-pr",
+            Description = "Create pull requests for task branches",
+            Example = "gbm -pr <TaskId> [Repos...]",
+            Group = CommandGroups.PullRequests,
+            Order = 0)]
         public async Task<int> ExecuteAsync(string taskId, string[] repositories, CancellationToken cancellationToken = default)
         {
             try

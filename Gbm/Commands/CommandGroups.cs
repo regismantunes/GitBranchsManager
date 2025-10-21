@@ -2,8 +2,9 @@
 {
     public static class CommandGroups
     {
-        public const string Branchs = "Branchs Commands";
-        public const string PullRequests = "Pull Requests Commands";
-        public const string Configuration = "Configuration Commands";
+        public const string Configuration = "1. Configuration Commands";
+        public const string Tasks = "2. Tasks Commands";
+        public const string Branchs = "3. Branchs Commands";
+        public const string PullRequests = "4. Pull Requests Commands";
     }
 }

@@ -5,7 +5,11 @@ namespace Gbm.Commands.BranchsCommands
 {
 	public class NewTaskBranchsCommand(IGitTool gitTool)
 	{
-		[CommandAsyncWithArgsBuilderAsync<BranchsCommandArgsBuilder>("-n", Description = "Create new branchs for the task", Example = "gbm -n <TaskId> [Repos...]")]
+		[CommandAsyncWithArgsBuilderAsync<BranchsCommandArgsBuilder>("-n",
+			Description = "Create new branchs for the task",
+			Example = "gbm -n <TaskId> [Repos...]",
+			Group = CommandGroups.Branchs,
+			Order = 0)]
 		public async Task<int> ExecuteAsync(string taskBranch, string[] repositories, CancellationToken cancellationToken = default)
 		{
 			gitTool.ShowGitOutput = true;

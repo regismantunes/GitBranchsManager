@@ -1,11 +1,15 @@
-﻿using Gbm.Persistence.Repositories.Interfaces;
+using Gbm.Persistence.Repositories.Interfaces;
 using RA.Console.DependecyInjection.Attributes;
 
 namespace Gbm.Commands.PullRequestCommands
 {
     public class ListPullRequestInfoByTaskIdCommand(ITaskInfoRepository taskInfoRepository, IPullRequestInfoRepository pullRequestInfoRepository)
     {
-        [CommandAsync("-pri", Description = "List pull requests by TaskId", Example = "gbm -pri <TaskId>")]
+        [CommandAsync("-pri",
+            Description = "List pull requests by TaskId",
+            Example = "gbm -pri <TaskId>",
+            Group = CommandGroups.PullRequests,
+            Order = 1)]
         public async Task<int> ExecuteAsync(string taskId, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(taskId))

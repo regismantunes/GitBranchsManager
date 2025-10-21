@@ -5,7 +5,11 @@ namespace Gbm.Commands.BranchsCommands
 {
     public class UpdateTaskBranchsCommand(IGitTool gitTool)
     {
-        [CommandAsyncWithArgsBuilderAsync<BranchsCommandArgsBuilder>("-u", Description = "Update task branches from base", Example = "gbm -u <TaskId> [Repos...]")]
+        [CommandAsyncWithArgsBuilderAsync<BranchsCommandArgsBuilder>("-u",
+            Description = "Update task branches from base",
+            Example = "gbm -u <TaskId> [Repos...]",
+            Group = CommandGroups.Branchs,
+            Order = 3)]
         public async Task<int> ExecuteAsync(string taskBranch, string[] repositories, CancellationToken cancellationToken = default)
         {
             gitTool.ShowGitOutput = true;

@@ -1,4 +1,4 @@
-﻿using Gbm.Persistence.Repositories.Interfaces;
+using Gbm.Persistence.Repositories.Interfaces;
 using RA.Console.DependecyInjection.Attributes;
 using TextCopy;
 
@@ -6,7 +6,11 @@ namespace Gbm.Commands.TaskInfoCommands
 {
     public class SaveTaskInfoCommand(ITaskInfoRepository repository)
     {
-        [CommandAsync("-t", Description = "Save task information", Example = "gbm -t <TaskId>")]
+        [CommandAsync("-t",
+            Description = "Save task information",
+            Example = "gbm -t <TaskId>",
+            Group = CommandGroups.Tasks,
+            Order = 0)]
         public async Task<int> ExecuteAsync(string taskId, CancellationToken cancellationToken = default)
         {
             MyConsole.WriteHeader($"--- Saving Task Info ---");

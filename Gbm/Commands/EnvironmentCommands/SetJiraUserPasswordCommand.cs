@@ -1,4 +1,4 @@
-﻿using Gbm.Persistence.Environment;
+using Gbm.Persistence.Environment;
 using Gbm.Services.Extensions;
 using RA.Console.DependecyInjection.Attributes;
 
@@ -6,7 +6,11 @@ namespace Gbm.Commands.EnvironmentCommands
 {
     public class SetJiraUserPasswordCommand
     {
-        [Command("-jp", Description = "Set Jira user password", Example = "gbm -jp <UserPassword>")]
+        [Command("-jp",
+            Description = "Set Jira user password",
+            Example = "gbm -jp <UserPassword>",
+            Group = CommandGroups.Configuration,
+            Order = 5)]
         public int Execute(string value)
         {
             EnvironmentVariable.JiraUserPassword.SetValue(value);
