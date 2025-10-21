@@ -1,10 +1,11 @@
-using Gbm.Persistence.Environment;
-using Gbm.Services.Extensions;
+using Gbm.Persistence.Configuration;
+using Gbm.Services.Configuration;
+using Microsoft.Extensions.Configuration;
 using RA.Console.DependecyInjection.Attributes;
 
-namespace Gbm.Commands.EnvironmentCommands
+namespace Gbm.Commands.ConfigurationCommands
 {
-    public class SetJiraTokenSecretyCommand
+    public class SetJiraTokenSecretyCommand(IConfiguration configuration)
     {
         [Command("-jt",
             Description = "Set Jira Token Secrety",
@@ -14,7 +15,7 @@ namespace Gbm.Commands.EnvironmentCommands
         public int Execute(string value)
         {
             MyConsole.WriteHeader("⚙️ Updating configuration: Jira Token Secrety...");
-            EnvironmentVariable.JiraTokenSecrety.SetValue(value);
+            configuration.SetValue(ConfigurationVariable.JiraTokenSecrety, value);
             MyConsole.WriteSucess($"✅ Jira Token Secrety has updated. (User scope)");
             return 0;
         }

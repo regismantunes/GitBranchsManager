@@ -1,21 +1,21 @@
-﻿using Gbm.Persistence.Environment;
+﻿using Gbm.Persistence.Configuration;
 
 namespace Gbm.Services.Initialization
 {
     public static class FailMessages
     {
-        public static IReadOnlyDictionary<EnvironmentVariable, string> MissingEnvironmentVariableMessages => new Dictionary<EnvironmentVariable, string>()
+        public static IReadOnlyDictionary<ConfigurationVariable, string> MissingConfigurationVariableMessages => new Dictionary<ConfigurationVariable, string>()
         {
-            { EnvironmentVariable.BasePath, MissingBasePathMessage },
-            { EnvironmentVariable.GitHubToken, MissingGitHubTokenMessage },
-            { EnvironmentVariable.GitHubRepositoriesOwner, MissingGitHubRepositoriesOwnerMessage },
-            { EnvironmentVariable.JiraDomain, MissingJiraDomainMessage },
-            { EnvironmentVariable.JiraUserMail, MissingJiraUserMailMessage },
-            { EnvironmentVariable.JiraUserPassword, MissingJiraUserPasswordMessage },
-            { EnvironmentVariable.JiraConsumerKey, MissingJiraConsumerKeyMessage },
-            { EnvironmentVariable.JiraConsumerSecret, MissingJiraConsumerSecretyMessage },
-            { EnvironmentVariable.JiraAccessToken, MissingJiraAccessTokenMessage },
-            { EnvironmentVariable.JiraTokenSecrety, MissingJiraTokenSecretyMessage }
+            { ConfigurationVariable.BasePath, MissingBasePathMessage },
+            { ConfigurationVariable.GitHubToken, MissingGitHubTokenMessage },
+            { ConfigurationVariable.GitHubRepositoriesOwner, MissingGitHubRepositoriesOwnerMessage },
+            { ConfigurationVariable.JiraDomain, MissingJiraDomainMessage },
+            { ConfigurationVariable.JiraUserMail, MissingJiraUserMailMessage },
+            { ConfigurationVariable.JiraUserPassword, MissingJiraUserPasswordMessage },
+            { ConfigurationVariable.JiraConsumerKey, MissingJiraConsumerKeyMessage },
+            { ConfigurationVariable.JiraConsumerSecret, MissingJiraConsumerSecretyMessage },
+            { ConfigurationVariable.JiraAccessToken, MissingJiraAccessTokenMessage },
+            { ConfigurationVariable.JiraTokenSecrety, MissingJiraTokenSecretyMessage }
         };
 
         public const string MissingBasePathMessage = """

@@ -1,10 +1,11 @@
-using Gbm.Persistence.Environment;
-using Gbm.Services.Extensions;
+using Gbm.Persistence.Configuration;
+using Gbm.Services.Configuration;
+using Microsoft.Extensions.Configuration;
 using RA.Console.DependecyInjection.Attributes;
 
-namespace Gbm.Commands.EnvironmentCommands
+namespace Gbm.Commands.ConfigurationCommands
 {
-    public class SetGitHubRepositoriesOwnerCommand
+    public class SetGitHubRepositoriesOwnerCommand(IConfiguration configuration)
     {
         [Command("-go",
             Description = "Set GitHub repositories owner",
@@ -14,7 +15,7 @@ namespace Gbm.Commands.EnvironmentCommands
         public int Execute(string value)
         {
             MyConsole.WriteHeader("⚙️ Updating configuration: GitHub Repositories Owner...");
-            EnvironmentVariable.GitHubRepositoriesOwner.SetValue(value);
+            configuration.SetValue(ConfigurationVariable.GitHubRepositoriesOwner, value);
             MyConsole.WriteSucess($"✅ Repositories owner updated to '{value}' (User scope)");
             return 0;
         }

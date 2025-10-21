@@ -1,10 +1,11 @@
-using Gbm.Persistence.Environment;
-using Gbm.Services.Extensions;
+using Gbm.Persistence.Configuration;
+using Gbm.Services.Configuration;
+using Microsoft.Extensions.Configuration;
 using RA.Console.DependecyInjection.Attributes;
 
-namespace Gbm.Commands.EnvironmentCommands
+namespace Gbm.Commands.ConfigurationCommands
 {
-    public class SetJiraConsumerSecretyCommand
+    public class SetJiraConsumerSecretyCommand(IConfiguration configuration)
     {
         [Command("-js",
             Description = "Set Jira Consumer Secrety",
@@ -14,7 +15,7 @@ namespace Gbm.Commands.EnvironmentCommands
         public int Execute(string value)
         {
             MyConsole.WriteHeader("⚙️ Updating configuration: Jira Consumer Secret...");
-            EnvironmentVariable.JiraConsumerSecret.SetValue(value);
+            configuration.SetValue(ConfigurationVariable.JiraConsumerSecret, value);
             MyConsole.WriteSucess($"✅ Jira consumer secrety was updated (User scope)");
             return 0;
         }

@@ -15,6 +15,7 @@ namespace Gbm
 
                 var commandBuilder = new ConsoleAppBuilder(args);
                 commandBuilder.Services.AddAllServices();
+                
                 var app = commandBuilder
                     .AddAssembly(typeof(Program).Assembly)
                     .UseDefaultHelpResources()

@@ -1,10 +1,11 @@
-using Gbm.Persistence.Environment;
-using Gbm.Services.Extensions;
+using Gbm.Persistence.Configuration;
+using Gbm.Services.Configuration;
+using Microsoft.Extensions.Configuration;
 using RA.Console.DependecyInjection.Attributes;
 
-namespace Gbm.Commands.EnvironmentCommands
+namespace Gbm.Commands.ConfigurationCommands
 {
-    public class SetJiraAccessTokenCommand
+    public class SetJiraAccessTokenCommand(IConfiguration configuration)
     {
         [Command("-ja",
             Description = "Set Jira Access Token",
@@ -14,7 +15,7 @@ namespace Gbm.Commands.EnvironmentCommands
         public int Execute(string value)
         {
             MyConsole.WriteHeader("⚙️ Updating configuration: Jira Access Token...");
-            EnvironmentVariable.JiraAccessToken.SetValue(value);
+            configuration.SetValue(ConfigurationVariable.JiraAccessToken, value);
             MyConsole.WriteSucess($"✅ Jira access token was updated (User scope)");
             return 0;
         }

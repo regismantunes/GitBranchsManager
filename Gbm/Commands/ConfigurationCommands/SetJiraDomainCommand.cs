@@ -1,10 +1,11 @@
-using Gbm.Persistence.Environment;
-using Gbm.Services.Extensions;
+using Gbm.Persistence.Configuration;
+using Gbm.Services.Configuration;
+using Microsoft.Extensions.Configuration;
 using RA.Console.DependecyInjection.Attributes;
 
-namespace Gbm.Commands.EnvironmentCommands
+namespace Gbm.Commands.ConfigurationCommands
 {
-    public class SetJiraDomainCommand
+    public class SetJiraDomainCommand(IConfiguration configuration)
     {
         [Command("-jd",
             Description = "Set Jira domain",
@@ -14,7 +15,7 @@ namespace Gbm.Commands.EnvironmentCommands
         public int Execute(string value)
         {
             MyConsole.WriteHeader("⚙️ Updating configuration: Jira Domain...");
-            EnvironmentVariable.JiraDomain.SetValue(value);
+            configuration.SetValue(ConfigurationVariable.JiraDomain, value);
             MyConsole.WriteSucess($"✅ Jira domain updated to '{value}' (User scope)");
             return 0;
         }

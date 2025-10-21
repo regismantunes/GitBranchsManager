@@ -1,19 +1,23 @@
-﻿using Gbm.Persistence.Environment;
 using Gbm.Persistence.Repositories;
 using Gbm.Persistence.Repositories.Interfaces;
-using Gbm.Services.Extensions;
 using Gbm.Services.Git;
 using Gbm.Services.GitHub;
 using Gbm.Services.Jira;
+using Gbm.Services.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
+using Gbm.Persistence.Configuration;
 
 namespace Gbm.Services.Initialization
 {
     public static class IServiceCollectionExtensions
     {
+        private static readonly string AppDataFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Gbm");
+
         public static IServiceCollection AddAllServices(this IServiceCollection services)
         {
             return services
+                .AddConfiguration()
                 .AddJiraClient()
                 .AddGitHubClient()
                 .AddGitTool()
@@ -21,17 +25,35 @@ namespace Gbm.Services.Initialization
                 .AddTaskInfoRepository();
         }
 
+        public static IServiceCollection AddConfiguration(this IServiceCollection services)
+        {
+            var configFilePath = Path.Combine(AppDataFolder, "config.json");
+
+            Directory.CreateDirectory(AppDataFolder);
+            if (!File.Exists(configFilePath))
+                File.WriteAllText(configFilePath, "{}");
+
+            var builder = new ConfigurationBuilder()
+                .SetBasePath(AppDataFolder)
+                .AddJsonFile(Path.GetFileName(configFilePath), optional: false, reloadOnChange: true);
+
+            var configuration = builder.Build();
+            services.AddSingleton<IConfiguration>(configuration);
+            return services;
+        }
+
         public static IServiceCollection AddJiraClient(this IServiceCollection services)
         {
             return services.AddSingleton<IJiraClient>(s =>
             {
-                var jiraDomain = EnvironmentVariable.JiraDomain.GetValueOrThrow();
-                var jiraConsumerKey = EnvironmentVariable.JiraConsumerKey.GetValue();
-                var jiraConsumerSecrety = EnvironmentVariable.JiraConsumerSecret.GetValue();
-                var jiraAcccessToken = EnvironmentVariable.JiraAccessToken.GetValue();
-                var jiraTokenSecrety = EnvironmentVariable.JiraTokenSecrety.GetValue();
-                var jiraUserMail = EnvironmentVariable.JiraUserMail.GetValue();
-                var jiraUserPassword = EnvironmentVariable.JiraUserPassword.GetValue();
+                var configuration = s.GetRequiredService<IConfiguration>();
+                var jiraDomain = configuration.GetValueOrThrow(ConfigurationVariable.JiraDomain);
+                var jiraConsumerKey = configuration.GetValue(ConfigurationVariable.JiraConsumerKey);
+                var jiraConsumerSecrety = configuration.GetValue(ConfigurationVariable.JiraConsumerSecret);
+                var jiraAcccessToken = configuration.GetValue(ConfigurationVariable.JiraAccessToken);
+                var jiraTokenSecrety = configuration.GetValue(ConfigurationVariable.JiraTokenSecrety);
+                var jiraUserMail = configuration.GetValue(ConfigurationVariable.JiraUserMail);
+                var jiraUserPassword = configuration.GetValue(ConfigurationVariable.JiraUserPassword);
                 var taskInfoRepository = s.GetRequiredService<ITaskInfoRepository>();
                 if (jiraConsumerKey is not null &&
                     jiraConsumerSecrety is not null &&
@@ -55,8 +77,9 @@ namespace Gbm.Services.Initialization
         public static IServiceCollection AddGitTool(this IServiceCollection services)
         {
             return services.AddSingleton<IGitTool>(s => 
-            { 
-                var basePath = EnvironmentVariable.BasePath.GetValueOrThrow();
+            {
+                var configuration = s.GetRequiredService<IConfiguration>();
+                var basePath = configuration.GetValueOrThrow(ConfigurationVariable.BasePath);
                 return new GitTool(basePath);
             });
         }
@@ -65,11 +88,10 @@ namespace Gbm.Services.Initialization
         {
             return services.AddSingleton<IGitHubClient>(s =>
             {
-                var token = EnvironmentVariable.GitHubToken.GetValueOrThrow();
-                var repositoriesOwner = EnvironmentVariable.GitHubRepositoriesOwner.GetValueOrThrow();
-                return new GitHubClient(
-                    token,
-                    repositoriesOwner);
+                var configuration = s.GetRequiredService<IConfiguration>();
+                var token = configuration.GetValueOrThrow(ConfigurationVariable.GitHubToken);
+                var repositoriesOwner = configuration.GetValueOrThrow(ConfigurationVariable.GitHubRepositoriesOwner);
+                return new GitHubClient(token, repositoriesOwner);
             });
         }
 
@@ -77,8 +99,9 @@ namespace Gbm.Services.Initialization
         {
             return services.AddSingleton<ITaskInfoRepository>(s =>
             {
-                var jiraDomain = EnvironmentVariable.JiraDomain.GetValueOrThrow();
-                var basePath = EnvironmentVariable.BasePath.GetValueOrThrow();
+                var configuration = s.GetRequiredService<IConfiguration>();
+                var jiraDomain = configuration.GetValueOrThrow(ConfigurationVariable.JiraDomain);
+                var basePath = configuration.GetValueOrThrow(ConfigurationVariable.BasePath);
                 return new TaskInfoRepository(jiraDomain, Path.Combine(basePath, "tasksinfo.json"));
             });
         }
@@ -87,7 +110,8 @@ namespace Gbm.Services.Initialization
         {
             return services.AddSingleton<IPullRequestInfoRepository>(s =>
             {
-                var basePath = EnvironmentVariable.BasePath.GetValueOrThrow();
+                var configuration = s.GetRequiredService<IConfiguration>();
+                var basePath = configuration.GetValueOrThrow(ConfigurationVariable.BasePath);
                 return new PullRequestInfoRepository(Path.Combine(basePath, "pullrequestsinfo.json"));
             });
         }
