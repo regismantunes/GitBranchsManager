@@ -1,8 +1,8 @@
 using System.Diagnostics;
 
-namespace Gbm.Git
+namespace Gbm.Services.Git
 {
-    public class GitTool
+    public class GitTool : IGitTool
     {
         public string? WorkingDirectory { get; private set; }
         public string BasePath { get; set; }
@@ -27,14 +27,6 @@ namespace Gbm.Git
             ShowGitOutput = PreviousShowGitOutput;
         }
 
-        public string GetBranchNameFromTaskId(string taskId)
-        {
-            if (string.IsNullOrWhiteSpace(taskId))
-                throw new ArgumentException("Task ID cannot be null or empty.", nameof(taskId));
-
-            return $"feature/{taskId}";
-        }
-
         public void SetRepository(string repository)
         {
             var workingDirectory = Path.Combine(BasePath, repository);
@@ -42,12 +34,12 @@ namespace Gbm.Git
             WorkingDirectory = workingDirectory;
         }
 
-        public async Task<string> GetMainBranchAsync()
+        public async Task<string> GetMainBranchAsync(CancellationToken cancellationToken = default)
         {
             try
             {
                 DisableShowGitOutput();
-                var gitResult = await RunGitAsync("branch --list");
+                var gitResult = await RunGitAsync("branch --list", cancellationToken);
                 var branchs = gitResult
                     .Split('\n')
                     .Select(b => b.Replace("* ", string.Empty))
@@ -71,35 +63,35 @@ namespace Gbm.Git
             }
         }
 
-        public async Task CheckoutToMainAsync()
+        public async Task CheckoutToMainAsync(CancellationToken cancellationToken = default)
         {
-            var mainBranch = await GetMainBranchAsync();
-            await CheckoutAsync(mainBranch);
+            var mainBranch = await GetMainBranchAsync(cancellationToken);
+            await CheckoutAsync(mainBranch, cancellationToken);
         }
 
-        public async Task CheckoutAsync(string branch)
+        public async Task CheckoutAsync(string branch, CancellationToken cancellationToken = default)
         {
             while (true)
             {
-                if (await RunGitOkAsync($"checkout {branch}")) return;
+                if (await RunGitOkAsync($"checkout {branch}", cancellationToken)) return;
                 MyConsole.WriteError($"❌ It was not possible to checkout to '{branch}' branch.");
                 MyConsole.WriteError("🛑 Please resolve the not commited files, then press ENTER to continue...");
                 MyConsole.ReadLineThenClear();
             }
         }
 
-        public async Task GetMainChangesAsync()
+        public async Task GetMainChangesAsync(CancellationToken cancellationToken = default)
         {
-            var mainBranch = await GetMainBranchAsync();
-            await PullOriginAsync(branchFrom: mainBranch);
+            var mainBranch = await GetMainBranchAsync(cancellationToken);
+            await PullOriginAsync(branchFrom: mainBranch, cancellationToken);
         }
 
-        public async Task<string> GetCurrentBranchAsync()
+        public async Task<string> GetCurrentBranchAsync(CancellationToken cancellationToken = default)
         {
             try
             {
                 DisableShowGitOutput();
-                var branch = await RunGitAsync("rev-parse --abbrev-ref HEAD");
+                var branch = await RunGitAsync("rev-parse --abbrev-ref HEAD", cancellationToken);
                 if (string.IsNullOrWhiteSpace(branch))
                     throw new InvalidOperationException("Could not determine the current branch. Please ensure you are in a valid Git repository.");
                 return branch.Trim();
@@ -110,14 +102,14 @@ namespace Gbm.Git
             }
         }
 
-        public async Task PullOriginAsync(string branchFrom)
+        public async Task PullOriginAsync(string branchFrom, CancellationToken cancellationToken = default)
         {
-            var branchTo = await GetCurrentBranchAsync();
-            if (await RunGitOkAsync($"pull origin {branchFrom}")) return;
+            var branchTo = await GetCurrentBranchAsync(cancellationToken);
+            if (await RunGitOkAsync($"pull origin {branchFrom}", cancellationToken)) return;
             MyConsole.WriteError($"❌ Merge conflict detected while getting changes from '{branchFrom}' into '{branchTo}'.");
             MyConsole.WriteError("🛑 Please resolve the conflicts manually, then press ENTER to continue...");
             MyConsole.ReadLineThenClear();
-            while (await HasUncommittedChangesAsync())
+            while (await HasUncommittedChangesAsync(cancellationToken))
             {
                 MyConsole.WriteError($"❌ There is still uncommitted changes.");
                 MyConsole.WriteError("🛑 Please resolve the not commited files, then press ENTER to continue...");
@@ -125,32 +117,32 @@ namespace Gbm.Git
             }
         }
 
-        public async Task PullAsync()
+        public async Task PullAsync(CancellationToken cancellationToken = default)
         {
-            await RunGitAsync("pull");
+            await RunGitAsync("pull", cancellationToken);
         }
 
-        public async Task CheckoutNewBranchAsync(string branch)
+        public async Task CheckoutNewBranchAsync(string branch, CancellationToken cancellationToken = default)
         {
-            await RunGitAsync($"checkout -b {branch}");
+            await RunGitAsync($"checkout -b {branch}", cancellationToken);
         }
 
-        public async Task PushAsync()
+        public async Task PushAsync(CancellationToken cancellationToken = default)
         {
-            var branch = await GetCurrentBranchAsync();
-            var branchRemoteExists = await BranchExistsRemotelyAsync(branch);
-            
+            var branch = await GetCurrentBranchAsync(cancellationToken);
+            var branchRemoteExists = await BranchExistsRemotelyAsync(branch, cancellationToken);
+
             await RunGitAsync(branchRemoteExists ?
                 "push" :
-                $"push --set-upstream origin {branch}");
+                $"push --set-upstream origin {branch}", cancellationToken);
         }
 
-        public async Task<bool> BranchExistsRemotelyAsync(string branch)
+        public async Task<bool> BranchExistsRemotelyAsync(string branch, CancellationToken cancellationToken = default)
         {
             try
             {
                 DisableShowGitOutput();
-                var result = await RunGitAsync($"ls-remote --heads origin {branch}");
+                var result = await RunGitAsync($"ls-remote --heads origin {branch}", cancellationToken);
                 return !string.IsNullOrWhiteSpace(result);
             }
             finally
@@ -159,20 +151,20 @@ namespace Gbm.Git
             }
         }
 
-        public async Task DeleteLocalBranchAsync(string branch)
+        public async Task DeleteLocalBranchAsync(string branch, CancellationToken cancellationToken = default)
         {
-            var currentBranch = await GetCurrentBranchAsync();
+            var currentBranch = await GetCurrentBranchAsync(cancellationToken);
             if (currentBranch == branch)
-                await CheckoutToMainAsync();
-            await RunGitAsync($"branch -d {branch}");
+                await CheckoutToMainAsync(cancellationToken);
+            await RunGitAsync($"branch -D {branch}", cancellationToken);
         }
 
-        public async Task<bool> HasUncommittedChangesAsync()
+        public async Task<bool> HasUncommittedChangesAsync(CancellationToken cancellationToken = default)
         {
             try
             {
                 DisableShowGitOutput();
-                var status = await RunGitAsync("status --porcelain");
+                var status = await RunGitAsync("status --porcelain", cancellationToken);
                 return !string.IsNullOrWhiteSpace(status);
             }
             finally
@@ -181,12 +173,12 @@ namespace Gbm.Git
             }
         }
 
-        public async Task<bool> BranchExistsAsync(string branch)
+        public async Task<bool> BranchExistsAsync(string branch, CancellationToken cancellationToken = default)
         {
             try
             {
                 DisableShowGitOutput();
-                var result = await RunGitAsync($"branch --list {branch}");
+                var result = await RunGitAsync($"branch --list {branch}", cancellationToken);
                 return !string.IsNullOrWhiteSpace(result);
             }
             finally
@@ -195,19 +187,36 @@ namespace Gbm.Git
             }
         }
 
-        private async Task<bool> RunGitOkAsync(string arguments)
+        public async Task<IEnumerable<string>> GetRepositoriesWithBranchAsync(string branch, CancellationToken cancellationToken = default)
         {
-            var result = await RunGitAndGetResultAsync(arguments);
+            var repositoriesWithBranch = new List<string>();
+            var directories = Directory.GetDirectories(BasePath);
+            foreach (var directory in directories)
+            {
+                var repositoryName = Path.GetFileName(directory);
+                if (string.IsNullOrWhiteSpace(repositoryName)) continue;
+                SetRepository(repositoryName);
+                if (await BranchExistsAsync(branch, cancellationToken))
+                {
+                    repositoriesWithBranch.Add(repositoryName);
+                }
+            }
+            return repositoriesWithBranch;
+        }
+
+        private async Task<bool> RunGitOkAsync(string arguments, CancellationToken cancellationToken = default)
+        {
+            var result = await RunGitAndGetResultAsync(arguments, cancellationToken);
             return result.ExitCode == 0;
         }
 
-        private async Task<string> RunGitAsync(string arguments)
+        private async Task<string> RunGitAsync(string arguments, CancellationToken cancellationToken = default)
         {
-            var result = await RunGitAndGetResultAsync(arguments);
+            var result = await RunGitAndGetResultAsync(arguments, cancellationToken);
             return result.Output;
         }
 
-        private async Task<RunGitResult> RunGitAndGetResultAsync(string arguments)
+        private async Task<RunGitResult> RunGitAndGetResultAsync(string arguments, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(WorkingDirectory))
                 throw new InvalidOperationException("Repository is not set. Please set it using SetRepository method.");
@@ -227,7 +236,7 @@ namespace Gbm.Git
             process.Start();
             var stdout = process.StandardOutput.ReadToEnd();
             var stderr = process.StandardError.ReadToEnd();
-            await process.WaitForExitAsync();
+            await process.WaitForExitAsync(cancellationToken);
             var exitCode = process.ExitCode;
             if (ShowGitOutput)
             {

@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
-VisualStudioVersion = 18.0.11018.127 d18.0
+VisualStudioVersion = 18.0.11018.127
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gbm", "Gbm\Gbm.csproj", "{55EC7DB1-5EA8-E394-B4A2-ED8364F0E107}"
 EndProject
@@ -21,6 +21,10 @@ Global
 		{D18C8DDE-1CF5-4F5A-A5C5-4F8273749BB9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D18C8DDE-1CF5-4F5A-A5C5-4F8273749BB9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D18C8DDE-1CF5-4F5A-A5C5-4F8273749BB9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3B73E29F-049C-22EA-7C8B-90DEA3D5217E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3B73E29F-049C-22EA-7C8B-90DEA3D5217E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3B73E29F-049C-22EA-7C8B-90DEA3D5217E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3B73E29F-049C-22EA-7C8B-90DEA3D5217E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

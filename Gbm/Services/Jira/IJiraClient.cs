@@ -1,6 +1,6 @@
 ﻿using Gbm.Persistence.Entities;
 
-namespace Gbm.Jira
+namespace Gbm.Services.Jira
 {
     public interface IJiraClient
     {

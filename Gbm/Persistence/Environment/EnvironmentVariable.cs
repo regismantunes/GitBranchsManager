@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel;
 
-namespace Gbm.Environment
+namespace Gbm.Persistence.Environment
 {
     public enum EnvironmentVariable
     {

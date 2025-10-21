@@ -1,5 +1,6 @@
-﻿using Gbm.Commands;
-using Gbm.Commands.Args;
+﻿using Gbm.Services.Initialization;
+using RA.Console.DependecyInjection;
+using RA.Console.DependecyInjection.Args;
 
 namespace Gbm
 {
@@ -11,8 +12,16 @@ namespace Gbm
             try
             {
                 MyConsole.SetEncoding();
-                var ctx = ArgsBuilder.Build(args);
-                return await ProgramCommandBuilder.ExecuteWithArgsAsync(ctx);
+
+                var commandBuilder = new ConsoleAppBuilder(args);
+                commandBuilder.Services.AddAllServices();
+                var app = commandBuilder
+                    .AddAssembly(typeof(Program).Assembly)
+                    .UseDefaultHelpResources()
+                    .UseOptimizedInitialization()
+                    .Build();
+
+                return await app.RunAsync();
             }
             catch (ArgsValidationException vex)
             {

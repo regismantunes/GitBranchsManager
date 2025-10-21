@@ -34,14 +34,14 @@ namespace Gbm.Persistence.Repositories
             return JsonSerializer.Deserialize<List<TaskInfo>>(json) ?? [];
         }
 
-        public async Task SaveAsync(string taskId, string taskSummary, string taskDescription, CancellationToken cancellationToken = default)
+        public async Task SaveAsync(string taskId, string taskSummary, string taskDescription, string taskBranch, CancellationToken cancellationToken = default)
         {
             var jsonList = await GetListAsync(cancellationToken);
 
             if (jsonList.Exists(t => t.Id == taskId))
                 jsonList.RemoveAll(t => t.Id == taskId);
 
-            jsonList.Add(new TaskInfo(taskId, taskSummary, taskDescription, GetTaskUrl(taskId)));
+            jsonList.Add(new TaskInfo(taskId, taskSummary, taskDescription, GetTaskUrl(taskId), taskBranch));
 
             var json = JsonSerializer.Serialize(jsonList, _jsonOptions);
             await File.WriteAllTextAsync(_jsonTaskFile, json, cancellationToken);

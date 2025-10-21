@@ -1,14 +1,24 @@
 ﻿using Gbm.Persistence.Repositories.Interfaces;
+using RA.Console.DependecyInjection.Attributes;
 using TextCopy;
 
-namespace Gbm.Commands.PullRequestCommands
+namespace Gbm.Commands.TaskInfoCommands
 {
-    public class SaveTaskInfoCommand
+    public class SaveTaskInfoCommand(ITaskInfoRepository repository)
     {
-        public async Task<int> ExecuteAsync(ITaskInfoRepository repository, string taskId, CancellationToken cancellationToken = default)
+        [CommandAsync("-t", Description = "Save task information", Example = "gbm -t <TaskId>")]
+        public async Task<int> ExecuteAsync(string taskId, CancellationToken cancellationToken = default)
         {
             MyConsole.WriteHeader($"--- Saving Task Info ---");
             MyConsole.WriteStep($"Please, inform the task details:");
+
+            var taskBranch = GetTaskBranch(taskId);
+            if (taskBranch == ConsoleKey.Escape.ToString())
+            {
+                MyConsole.WriteError("❌ Operation cancelled by user.");
+                return 1;
+            }
+            MyConsole.WriteInfo($"→ Branch: {taskBranch}");
 
             var taskSummary = GetSummary();
             if (taskSummary == ConsoleKey.Escape.ToString())
@@ -25,9 +35,18 @@ namespace Gbm.Commands.PullRequestCommands
                 return 1;
             }
             MyConsole.WriteInfo($"→ Description: {taskDescription}");
-            await repository.SaveAsync(taskId, taskSummary, taskDescription, cancellationToken);
+            await repository.SaveAsync(taskId, taskSummary, taskDescription, taskBranch, cancellationToken);
             MyConsole.WriteSucess($"✅ Task info was sucessfuly saved");
             return 0;
+        }
+
+        private string GetTaskBranch(string taskId)
+        {
+            MyConsole.WriteStep($"→ Branch (enter with the branch name or press ENTER to accept the default: 'feature/{taskId}'):");
+            var taskBranch = MyConsole.ReadLineThenClear();
+            if (string.IsNullOrWhiteSpace(taskBranch))
+                taskBranch = $"feature/{taskId}";
+            return taskBranch!;
         }
 
         private string GetSummary()

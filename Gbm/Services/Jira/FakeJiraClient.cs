@@ -1,7 +1,7 @@
 ﻿using Gbm.Persistence.Entities;
 using Gbm.Persistence.Repositories.Interfaces;
 
-namespace Gbm.Jira
+namespace Gbm.Services.Jira
 {
     public class FakeJiraClient(ITaskInfoRepository repository) : IJiraClient
     {

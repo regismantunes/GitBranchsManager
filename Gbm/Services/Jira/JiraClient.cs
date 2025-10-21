@@ -1,9 +1,11 @@
 ﻿using Gbm.Persistence.Entities;
+using Gbm.Persistence.Repositories.Interfaces;
 
-namespace Gbm.Jira
+namespace Gbm.Services.Jira
 {
     public class JiraClient : IJiraClient
     {
+        private readonly ITaskInfoRepository _repository;
         private readonly string _jiraDomain;
         private readonly string? _userEmail;
         private readonly string? _userPassword;
@@ -12,25 +14,29 @@ namespace Gbm.Jira
         private readonly string? _accessToken;
         private readonly string? _accessTokenSecret;
 
-        public JiraClient(string jiraDomain, string userEmail, string userPassword)
+        public JiraClient(ITaskInfoRepository repository, string jiraDomain, string userEmail, string userPassword)
         {
-            ArgumentNullException.ThrowIfNull(jiraDomain);
-            ArgumentNullException.ThrowIfNull(userEmail);
-            ArgumentNullException.ThrowIfNull(userPassword);
+            ArgumentNullException.ThrowIfNull(repository);
+            ArgumentException.ThrowIfNullOrWhiteSpace(jiraDomain);
+            ArgumentException.ThrowIfNullOrWhiteSpace(userEmail);
+            ArgumentException.ThrowIfNullOrWhiteSpace(userPassword);
 
+            _repository = repository;
             _jiraDomain = jiraDomain;
             _userEmail = userEmail;
             _userPassword = userPassword;
         }
 
-        public JiraClient(string jiraDomain, string consumerKey, string consumerSecret, string accessToken, string accessTokenSecret)
+        public JiraClient(ITaskInfoRepository repository, string jiraDomain, string consumerKey, string consumerSecret, string accessToken, string accessTokenSecret)
         {
-            ArgumentNullException.ThrowIfNull(jiraDomain);
-            ArgumentNullException.ThrowIfNull(consumerKey);
-            ArgumentNullException.ThrowIfNull(consumerSecret);
-            ArgumentNullException.ThrowIfNull(accessToken);
-            ArgumentNullException.ThrowIfNull(accessTokenSecret);
+            ArgumentNullException.ThrowIfNull(repository);
+            ArgumentException.ThrowIfNullOrWhiteSpace(jiraDomain);
+            ArgumentException.ThrowIfNullOrWhiteSpace(consumerKey);
+            ArgumentException.ThrowIfNullOrWhiteSpace(consumerSecret);
+            ArgumentException.ThrowIfNullOrWhiteSpace(accessToken);
+            ArgumentException.ThrowIfNullOrWhiteSpace(accessTokenSecret);
 
+            _repository = repository;
             _jiraDomain = jiraDomain;
             _consumerKey = consumerKey;
             _consumerSecret = consumerSecret;
@@ -44,6 +50,10 @@ namespace Gbm.Jira
 
         public async Task<TaskInfo?> GetTaskInfoAsync(string taskId, CancellationToken cancellationToken = default)
         {
+            var taskInfo = await _repository.GetAsync(taskId, cancellationToken);
+            if (taskInfo is not null)
+                return taskInfo;
+
             var url = GetJiraUrl();
             var jira = _userEmail != null ?
                 Atlassian.Jira.Jira.CreateRestClient(url, _userEmail, _userPassword) :
@@ -54,7 +64,8 @@ namespace Gbm.Jira
             return new TaskInfo(taskId,
                                 issue.Summary,
                                 issue.Description ?? string.Empty,
-                                GetTaskUrl(taskId));
+                                GetTaskUrl(taskId),
+                                $"feature/{taskId}");
         }
     }
 }

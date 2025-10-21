@@ -1,9 +1,12 @@
-﻿using Gbm.Environment;
+﻿using Gbm.Persistence.Environment;
+using Gbm.Services.Extensions;
+using RA.Console.DependecyInjection.Attributes;
 
 namespace Gbm.Commands.EnvironmentCommands
 {
-    public class SetJiraAccessTokenCommand : ISetEnvironmentCommand
+    public class SetJiraAccessTokenCommand
     {
+        [Command("-ja", Description = "Set Jira Access Token", Example = "gbm -ja <JiraAccessToken>")]
         public int Execute(string value)
         {
             EnvironmentVariable.JiraAccessToken.SetValue(value);

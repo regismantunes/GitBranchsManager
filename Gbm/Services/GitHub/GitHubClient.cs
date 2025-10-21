@@ -3,9 +3,9 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Gbm.GitHub
+namespace Gbm.Services.GitHub
 {
-    public class GitHubClient(string githubToken, string owner)
+    public class GitHubClient(string githubToken, string owner) : IGitHubClient
     {
         public string Owner { get; } = owner;
 
@@ -26,12 +26,9 @@ namespace Gbm.GitHub
             return httpClient;
         }
 
-        private string CreateTaskLink(string text, string url)
-        {
-            return $"[{text}]({url})";
-        }
+        private static string CreateTaskLink(string text, string url) => $"[{text}]({url})";
 
-        private string CreatePullRequestBody(TaskInfo taskInfo, string? relatedPRsText = null)
+        private static string CreatePullRequestBody(TaskInfo taskInfo, string? relatedPRsText = null)
         {
             var taskLink = CreateTaskLink(taskInfo.Id, taskInfo.Url);
             var body = $"This PR implements the {taskLink} feature.\r\r{taskInfo.Description}";
@@ -62,7 +59,7 @@ namespace Gbm.GitHub
             var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
             if (!response.IsSuccessStatusCode)
                 throw new Exception($"Failed to create PR in {repo}: {response.StatusCode} - {responseContent}");
-            
+
             var prData = JsonSerializer.Deserialize<GitHubPrResponse>(responseContent, JsonOptions)
                 ?? throw new Exception($"Failed to deserialize PR response for {repo}");
 
@@ -94,7 +91,7 @@ namespace Gbm.GitHub
         {
             [JsonPropertyName("number")]
             public int Number { get; set; }
-            
+
             [JsonPropertyName("html_url")]
             public string HtmlUrl { get; set; } = string.Empty;
         }

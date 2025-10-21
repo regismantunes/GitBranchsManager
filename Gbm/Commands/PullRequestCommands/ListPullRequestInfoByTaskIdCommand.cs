@@ -1,10 +1,12 @@
 ﻿using Gbm.Persistence.Repositories.Interfaces;
+using RA.Console.DependecyInjection.Attributes;
 
 namespace Gbm.Commands.PullRequestCommands
 {
-    public class ListPullRequestInfoByTaskIdCommand
+    public class ListPullRequestInfoByTaskIdCommand(ITaskInfoRepository taskInfoRepository, IPullRequestInfoRepository pullRequestInfoRepository)
     {
-        public async Task<int> ExecuteAsync(string taskId, ITaskInfoRepository taskInfoRepository, IPullRequestInfoRepository pullRequestInfoRepository, CancellationToken cancellationToken = default)
+        [CommandAsync("-pri", Description = "List pull requests by TaskId", Example = "gbm -pri <TaskId>")]
+        public async Task<int> ExecuteAsync(string taskId, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(taskId))
                 throw new ArgumentException("Task ID cannot be null or empty.", nameof(taskId));

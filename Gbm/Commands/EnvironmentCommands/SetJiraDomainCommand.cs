@@ -1,9 +1,12 @@
-﻿using Gbm.Environment;
+﻿using Gbm.Persistence.Environment;
+using Gbm.Services.Extensions;
+using RA.Console.DependecyInjection.Attributes;
 
 namespace Gbm.Commands.EnvironmentCommands
 {
-    public class SetJiraDomainCommand : ISetEnvironmentCommand
+    public class SetJiraDomainCommand
     {
+        [Command("-jd", Description = "Set Jira domain", Example = "gbm -jd <Domain>")]
         public int Execute(string value)
         {
             EnvironmentVariable.JiraDomain.SetValue(value);

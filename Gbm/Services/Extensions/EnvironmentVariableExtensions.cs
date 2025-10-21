@@ -1,6 +1,9 @@
-﻿using System.ComponentModel;
+﻿using Gbm.Persistence.Environment;
+using Gbm.Services.Initialization;
+using RA.Console.DependecyInjection.Args;
+using System.ComponentModel;
 
-namespace Gbm.Environment
+namespace Gbm.Services.Extensions
 {
     internal static class EnvironmentVariableExtensions
     {
@@ -31,6 +34,14 @@ namespace Gbm.Environment
         {
             var name = GetName(variable);
             System.Environment.SetEnvironmentVariable(name, value, environmentVariableTarget);
+        }
+
+        public static string GetValueOrThrow(this EnvironmentVariable variable)
+        {
+            var value = variable.GetValue();
+            return string.IsNullOrWhiteSpace(value) ?
+                throw new ArgsValidationException(FailMessages.MissingEnvironmentVariableMessages[variable]) :
+                value;
         }
     }
 }

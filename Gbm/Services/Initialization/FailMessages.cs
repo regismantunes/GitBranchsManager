@@ -1,7 +1,23 @@
-﻿namespace Gbm.Commands.Args
+﻿using Gbm.Persistence.Environment;
+
+namespace Gbm.Services.Initialization
 {
-    public static class ArgsFailMessages
+    public static class FailMessages
     {
+        public static IReadOnlyDictionary<EnvironmentVariable, string> MissingEnvironmentVariableMessages => new Dictionary<EnvironmentVariable, string>()
+        {
+            { EnvironmentVariable.BasePath, MissingBasePathMessage },
+            { EnvironmentVariable.GitHubToken, MissingGitHubTokenMessage },
+            { EnvironmentVariable.GitHubRepositoriesOwner, MissingGitHubRepositoriesOwnerMessage },
+            { EnvironmentVariable.JiraDomain, MissingJiraDomainMessage },
+            { EnvironmentVariable.JiraUserMail, MissingJiraUserMailMessage },
+            { EnvironmentVariable.JiraUserPassword, MissingJiraUserPasswordMessage },
+            { EnvironmentVariable.JiraConsumerKey, MissingJiraConsumerKeyMessage },
+            { EnvironmentVariable.JiraConsumerSecret, MissingJiraConsumerSecretyMessage },
+            { EnvironmentVariable.JiraAccessToken, MissingJiraAccessTokenMessage },
+            { EnvironmentVariable.JiraTokenSecrety, MissingJiraTokenSecretyMessage }
+        };
+
         public const string MissingBasePathMessage = """
 			❌ Base path is not set.
 			Use the command: gbm -b <BasePath>
