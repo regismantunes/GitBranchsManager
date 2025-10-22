@@ -14,7 +14,7 @@ namespace Gbm.Commands.ConfigurationCommands
             Order = 7)]
         public int Execute(string value)
         {
-            MyConsole.WriteHeader("⚙️ Updating configuration: Jira Consumer Secret...");
+            MyConsole.WriteCommandHeader("⚙️ Updating configuration: Jira Consumer Secret...");
             configuration.SetValue(ConfigurationVariable.JiraConsumerSecret, value);
             MyConsole.WriteSucess($"✅ Jira consumer secrety was updated (User scope)");
             return 0;

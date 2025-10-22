@@ -13,7 +13,7 @@ namespace Gbm.Commands.TaskInfoCommands
             Order = 0)]
         public async Task<int> ExecuteAsync(string taskId, CancellationToken cancellationToken = default)
         {
-            MyConsole.WriteHeader($"--- Saving Task Info ---");
+            MyConsole.WriteCommandHeader($"💾 Saving task information...");
             MyConsole.WriteStep($"Please, inform the task details:");
 
             var taskBranch = GetTaskBranch(taskId);

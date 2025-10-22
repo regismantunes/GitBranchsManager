@@ -14,7 +14,7 @@ namespace Gbm.Commands.ConfigurationCommands
             Order = 0)]
         public int Execute(string value)
         {
-            MyConsole.WriteHeader("⚙️ Updating configuration: Base Path...");
+            MyConsole.WriteCommandHeader("⚙️ Updating configuration: Base Path...");
             configuration.SetValue(ConfigurationVariable.BasePath, value);
             MyConsole.WriteSucess($"✅ Base path updated to '{value}' (User scope)");
             return 0;

@@ -13,7 +13,7 @@ namespace Gbm.Commands.PullRequestCommands
             Order = 1)]
         public async Task<int> ExecuteAsync(string taskId, CancellationToken cancellationToken = default)
         {
-            MyConsole.WriteHeader("🧾 Listing pull requests by TaskId...");
+            MyConsole.WriteCommandHeader("🧾 Listing pull requests by TaskId...");
             if (string.IsNullOrWhiteSpace(taskId))
                 throw new ArgumentException("Task ID cannot be null or empty.", nameof(taskId));
 

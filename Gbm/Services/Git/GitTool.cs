@@ -189,6 +189,7 @@ namespace Gbm.Services.Git
 
         public async Task<IEnumerable<string>> GetRepositoriesWithBranchAsync(string branch, CancellationToken cancellationToken = default)
         {
+            MyConsole.WriteStep($"🔎 Searching for repositories with branch {branch}...");
             var repositoriesWithBranch = new List<string>();
             var directories = Directory.GetDirectories(BasePath);
             foreach (var directory in directories)
@@ -201,6 +202,7 @@ namespace Gbm.Services.Git
                     repositoriesWithBranch.Add(repositoryName);
                 }
             }
+            MyConsole.BackToPreviousLine();
             return repositoriesWithBranch;
         }
 

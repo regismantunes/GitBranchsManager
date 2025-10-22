@@ -14,7 +14,7 @@ namespace Gbm.Commands.ConfigurationCommands
             Order = 9)]
         public int Execute(string value)
         {
-            MyConsole.WriteHeader("⚙️ Updating configuration: Jira Token Secrety...");
+            MyConsole.WriteCommandHeader("⚙️ Updating configuration: Jira Token Secrety...");
             configuration.SetValue(ConfigurationVariable.JiraTokenSecrety, value);
             MyConsole.WriteSucess($"✅ Jira Token Secrety has updated. (User scope)");
             return 0;

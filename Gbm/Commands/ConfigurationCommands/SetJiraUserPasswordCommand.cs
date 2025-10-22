@@ -15,7 +15,7 @@ namespace Gbm.Commands.ConfigurationCommands
             Order = 5)]
         public int Execute(string value)
         {
-            MyConsole.WriteHeader("⚙️ Updating configuration: Jira User Password...");
+            MyConsole.WriteCommandHeader("⚙️ Updating configuration: Jira User Password...");
             configuration.SetValue(ConfigurationVariable.JiraUserPassword, value);
             MyConsole.WriteSucess($"✅ Jira user password has updated (User scope)");
             return 0;

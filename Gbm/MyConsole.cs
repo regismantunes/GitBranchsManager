@@ -39,6 +39,14 @@
             Console.ForegroundColor = originalColor;
         }
 
+        public static void WriteCommandHeader(string message)
+        {
+            var originalColor = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.DarkBlue;
+            Console.WriteLine(message);
+            Console.ForegroundColor = originalColor;
+        }
+
         public static void WriteInfo(string message)
         {
             var originalColor = Console.ForegroundColor;
@@ -49,9 +57,9 @@
 
         public static void BackToPreviousLine()
         {
-            Console.SetCursorPosition(0, Console.CursorTop - 1);
+            Console.SetCursorPosition(0, Console.CursorTop == 0 ? 0 : Console.CursorTop - 1);
             Console.Write(new string(' ', Console.WindowWidth));
-            Console.SetCursorPosition(0, Console.CursorTop - 1);
+            Console.SetCursorPosition(0, Console.CursorTop);
         }
 
         public static string ReadLineThenClear()

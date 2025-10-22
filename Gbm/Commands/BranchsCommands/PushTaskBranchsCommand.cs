@@ -13,7 +13,7 @@ namespace Gbm.Commands.BranchsCommands
         public async Task<int> ExecuteAsync(string taskBranch, string[] repositories, CancellationToken cancellationToken = default)
         {
             gitTool.ShowGitOutput = true;
-            MyConsole.WriteHeader("📤 Pushing task branches...");
+            MyConsole.WriteCommandHeader("📤 Pushing task branches...");
             foreach (var repo in repositories)
             {
                 MyConsole.WriteHeader($"--- Processing repository: {repo} ---");

@@ -13,7 +13,7 @@ namespace Gbm.Commands.BranchsCommands
         public async Task<int> ExecuteAsync(string taskBranch, string[] repositories, CancellationToken cancellationToken = default)
         {
             gitTool.ShowGitOutput = false;
-            MyConsole.WriteHeader("🧾 Listing repositories with task branchs...");
+            MyConsole.WriteCommandHeader("🧾 Listing repositories with task branchs...");
             foreach (var repo in repositories)
             {
                 gitTool.SetRepository(repo);

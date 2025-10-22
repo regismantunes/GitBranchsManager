@@ -14,7 +14,7 @@ namespace Gbm.Commands.ConfigurationCommands
             Order = 1)]
         public int Execute(string value)
         {
-            MyConsole.WriteHeader("⚙️ Updating configuration: GitHub Token...");
+            MyConsole.WriteCommandHeader("⚙️ Updating configuration: GitHub Token...");
             configuration.SetValue(ConfigurationVariable.GitHubToken, value);
             MyConsole.WriteSucess($"✅ GitHub Token has updated. (User scope)");
             return 0;

@@ -15,7 +15,7 @@ namespace Gbm.Commands.PullRequestCommands
             Order = 0)]
         public async Task<int> ExecuteAsync(string taskId, string[] repositories, CancellationToken cancellationToken = default)
         {
-            MyConsole.WriteHeader("🔧 Creating and updating pull requests for task...");
+            MyConsole.WriteCommandHeader("🔧 Creating and updating pull requests for task...");
             try
             {
                 // Create PRs for each repository

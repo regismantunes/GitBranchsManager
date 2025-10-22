@@ -14,7 +14,7 @@ namespace Gbm.Commands.ConfigurationCommands
             Order = 4)]
         public int Execute(string value)
         {
-            MyConsole.WriteHeader("⚙️ Updating configuration: Jira User Email...");
+            MyConsole.WriteCommandHeader("⚙️ Updating configuration: Jira User Email...");
             configuration.SetValue(ConfigurationVariable.JiraUserMail, value);
             MyConsole.WriteSucess($"✅ Jira user email updated to '{value}' (User scope)");
             return 0;

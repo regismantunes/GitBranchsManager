@@ -14,7 +14,7 @@ namespace Gbm.Commands.ConfigurationCommands
             Order = 3)]
         public int Execute(string value)
         {
-            MyConsole.WriteHeader("⚙️ Updating configuration: Jira Domain...");
+            MyConsole.WriteCommandHeader("⚙️ Updating configuration: Jira Domain...");
             configuration.SetValue(ConfigurationVariable.JiraDomain, value);
             MyConsole.WriteSucess($"✅ Jira domain updated to '{value}' (User scope)");
             return 0;
