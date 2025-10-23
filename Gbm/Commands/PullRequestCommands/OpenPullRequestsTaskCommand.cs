@@ -8,7 +8,7 @@ namespace Gbm.Commands.PullRequestCommands
 {
     public class OpenPullRequestsTaskCommand(IJiraClient jiraClient, IPullRequestInfoRepository repository, IGitHubClient gitHubClient, IGitTool gitTool)
     {
-        [CommandAsyncWithArgsBuilderAsync<TaskIdRepositoriesArgsBuilder>("-pr",
+        [CommandAsyncWithArgsBuilderAsync<OpenPullRequestsTaskCommandArgsBuilder>("-pr",
             Description = "Create pull requests for task branches. It will push local changes unless you sent the 'nopush' option.",
             Example = "gbm -pr <TaskId> [nopush] [Repos...]",
             Group = CommandGroups.PullRequests,

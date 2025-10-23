@@ -5,14 +5,14 @@ using RA.Console.DependencyInjection.Args;
 
 namespace Gbm.Unit.Tests.Commands.PullRequestCommands;
 
-public class TaskIdRepositoriesArgsBuilderTests
+public class OpenPullRequestsTaskCommandArgsBuilderTests
 {
     [Fact]
     public async Task BuildAsync_Throws_OnNullOrEmptyArgs()
     {
         var repo = new FakeTaskInfoRepository();
-        var git = new Gbm.Unit.Tests.Shared.Fakes.FakeGitTool();
-        var sut = new TaskIdRepositoriesArgsBuilder(repo, git);
+        var git = new FakeGitTool();
+        var sut = new OpenPullRequestsTaskCommandArgsBuilder(repo, git);
 
         await Assert.ThrowsAsync<ArgumentException>(() => sut.BuildAsync(null!));
         await Assert.ThrowsAsync<ArgumentException>(() => sut.BuildAsync([]));
@@ -22,8 +22,8 @@ public class TaskIdRepositoriesArgsBuilderTests
     public async Task BuildAsync_Throws_OnMissingTaskId()
     {
         var repo = new FakeTaskInfoRepository();
-        var git = new Gbm.Unit.Tests.Shared.Fakes.FakeGitTool();
-        var sut = new TaskIdRepositoriesArgsBuilder(repo, git);
+        var git = new FakeGitTool();
+        var sut = new OpenPullRequestsTaskCommandArgsBuilder(repo, git);
 
         var ex = await Assert.ThrowsAsync<ArgsValidationException>(() => sut.BuildAsync(["-pr-open"]));
         Assert.Contains("Missing TaskId", ex.Message);
@@ -34,8 +34,8 @@ public class TaskIdRepositoriesArgsBuilderTests
     {
         var repo = new FakeTaskInfoRepository();
         repo.Seed(new TaskInfo("GBM-3", "s", "d", "u", "feature/GBM-3"));
-        var git = new Gbm.Unit.Tests.Shared.Fakes.FakeGitTool();
-        var sut = new TaskIdRepositoriesArgsBuilder(repo, git);
+        var git = new FakeGitTool();
+        var sut = new OpenPullRequestsTaskCommandArgsBuilder(repo, git);
 
         var dict = await sut.BuildAsync(["-pr-open", "GBM-3", "RepoX", "RepoY"]);
         Assert.Equal("GBM-3", dict["TaskId"]);
@@ -47,13 +47,41 @@ public class TaskIdRepositoriesArgsBuilderTests
     {
         var repo = new FakeTaskInfoRepository();
         repo.Seed(new TaskInfo("GBM-4", "s", "d", "u", "feature/GBM-4"));
-        var git = new Gbm.Unit.Tests.Shared.Fakes.FakeGitTool();
+        var git = new FakeGitTool();
         git.Seed("feature/GBM-4", "RepoA", "RepoB");
-        var sut = new TaskIdRepositoriesArgsBuilder(repo, git);
+        var sut = new OpenPullRequestsTaskCommandArgsBuilder(repo, git);
 
         var dict = await sut.BuildAsync(["-pr-open", "GBM-4"]);
         var repos = Assert.IsAssignableFrom<IEnumerable<string>>(dict["Repositories"]);
         Assert.Contains("RepoA", repos);
         Assert.Contains("RepoB", repos);
+    }
+
+    [Fact]
+    public async Task BuildAsync_UsesNoPushOption()
+    {
+        var repo = new FakeTaskInfoRepository();
+        repo.Seed(new TaskInfo("GBM-3", "s", "d", "u", "feature/GBM-3"));
+        var git = new FakeGitTool();
+        git.Seed("feature/GBM-3", "RepoA", "RepoB");
+        var sut = new OpenPullRequestsTaskCommandArgsBuilder(repo, git);
+
+        var dict = await sut.BuildAsync(["-pr-open", "GBM-3", "nopush"]);
+        Assert.Equal("GBM-3", dict["TaskId"]);
+        Assert.Equal(false, Convert.ToBoolean(dict["PushLocalChanges"]));
+    }
+
+    [Fact]
+    public async Task BuildAsync_UsesNoPushOptionAndProvidedRepos()
+    {
+        var repo = new FakeTaskInfoRepository();
+        repo.Seed(new TaskInfo("GBM-3", "s", "d", "u", "feature/GBM-3"));
+        var git = new FakeGitTool();
+        var sut = new OpenPullRequestsTaskCommandArgsBuilder(repo, git);
+
+        var dict = await sut.BuildAsync(["-pr-open", "GBM-3", "nopush", "RepoX", "RepoY"]);
+        Assert.Equal("GBM-3", dict["TaskId"]);
+        Assert.Equal(false, Convert.ToBoolean(dict["PushLocalChanges"]));
+        Assert.Equal(["RepoX", "RepoY"], dict["Repositories"] as IEnumerable<string>);
     }
 }

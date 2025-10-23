@@ -4,7 +4,7 @@ using RA.Console.DependencyInjection.Args;
 
 namespace Gbm.Commands.PullRequestCommands
 {
-    public class TaskIdRepositoriesArgsBuilder(ITaskInfoRepository taskInfoRepository, IGitTool gitTool) : IArgsBuilderAsync
+    public class OpenPullRequestsTaskCommandArgsBuilder(ITaskInfoRepository taskInfoRepository, IGitTool gitTool) : IArgsBuilderAsync
     {
         public async Task<IDictionary<string, object>> BuildAsync(string[] args, CancellationToken cancellationToken = default)
         {
