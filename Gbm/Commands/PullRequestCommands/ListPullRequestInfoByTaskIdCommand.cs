@@ -5,8 +5,7 @@ namespace Gbm.Commands.PullRequestCommands
 {
     public class ListPullRequestInfoByTaskIdCommand(ITaskInfoRepository taskInfoRepository, IPullRequestInfoRepository pullRequestInfoRepository)
     {
-        [CommandAsync(
-            "-pri",
+        [CommandAsync("-pri",
             Description = "List pull requests by TaskId",
             Example = "gbm -pri <TaskId>",
             Group = CommandGroups.PullRequests,

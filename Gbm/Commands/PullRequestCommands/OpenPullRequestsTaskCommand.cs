@@ -9,11 +9,11 @@ namespace Gbm.Commands.PullRequestCommands
     public class OpenPullRequestsTaskCommand(IJiraClient jiraClient, IPullRequestInfoRepository repository, IGitHubClient gitHubClient, IGitTool gitTool)
     {
         [CommandAsyncWithArgsBuilderAsync<TaskIdRepositoriesArgsBuilder>("-pr",
-            Description = "Create pull requests for task branches",
-            Example = "gbm -pr <TaskId> [Repos...]",
+            Description = "Create pull requests for task branches. It will push local changes unless you sent the 'nopush' option.",
+            Example = "gbm -pr <TaskId> [nopush] [Repos...]",
             Group = CommandGroups.PullRequests,
             Order = 0)]
-        public async Task<int> ExecuteAsync(string taskId, string[] repositories, CancellationToken cancellationToken = default)
+        public async Task<int> ExecuteAsync(string taskId, string[] repositories, bool pushLocalChanges = true, CancellationToken cancellationToken = default)
         {
             MyConsole.WriteCommandHeader("🔧 Creating and updating pull requests for task...");
             try
@@ -33,14 +33,28 @@ namespace Gbm.Commands.PullRequestCommands
                 {
                     if (await repository.ExistsAsync(taskId, repo, cancellationToken))
                         continue;
+                    
+                    gitTool.SetRepository(repo);
+                    gitTool.ShowGitOutput = true;
+
+                    if (pushLocalChanges)
+                    {
+                        MyConsole.WriteStep($"→ Checking out to '{taskInfo.BranchName}'");
+                        await gitTool.CheckoutAsync(taskInfo.BranchName, cancellationToken);
+
+                        MyConsole.WriteStep($"→ Pushing '{taskInfo.BranchName}'");
+                        await gitTool.PushAsync(cancellationToken);
+                    }
 
                     MyConsole.WriteStep($"→ Creating PR in {repo}...");
-                    gitTool.SetRepository(repo);
                     var baseBranch = await gitTool.GetMainBranchAsync(cancellationToken);
                     var pr = await gitHubClient.CreatePullRequestAsync(repo, taskInfo.BranchName, baseBranch, taskInfo, cancellationToken);
                     MyConsole.BackToPreviousLine();
                     MyConsole.WriteStep($"→ PR successful created in {repo}: {pr.Url}");
                     await repository.SaveAsync(pr, cancellationToken);
+
+                    gitTool.ShowGitOutput = false;
+                    await gitTool.CheckoutToMainAsync(cancellationToken);
                 }
 
                 // Generate related PRs text

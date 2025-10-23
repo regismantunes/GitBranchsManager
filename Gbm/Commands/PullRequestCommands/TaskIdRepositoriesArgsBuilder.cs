@@ -15,8 +15,23 @@ namespace Gbm.Commands.PullRequestCommands
             var command = args[0].ToLower();
             if (args.Length < 2) throw new ArgsValidationException($"Missing TaskId. Example: gbm {command} TaskId [Repo1 Repo2 ...]");
 
+            var parameters = new Dictionary<string, object>();
+            
             var taskId = args[1];
-            var repositories = args.Length > 2 ? args[2..] : null;
+            parameters.Add("TaskId", taskId);
+
+            string[]? repositories = null;
+
+            if (args.Length > 2)
+            {
+                var i = 2;
+                if (args[i].Equals("nopush", StringComparison.OrdinalIgnoreCase))
+                {
+                    parameters.Add("PushLocalChanges", false);
+                    i++;
+                }
+                repositories = args.Length > i ? args[i..] : null;
+            }
 
             if (repositories is null)
             {
@@ -25,12 +40,9 @@ namespace Gbm.Commands.PullRequestCommands
                 if (repositories.Length == 0)
                     throw new ArgsValidationException($"No repositories found with branch '{taskInfo.BranchName}'.");
             }
+            parameters.Add("Repositories", repositories);
 
-            return new Dictionary<string, object>
-            {
-                { "TaskId", taskId },
-                { "Repositories", repositories }
-            };
+            return parameters;
         }
     }
 }
