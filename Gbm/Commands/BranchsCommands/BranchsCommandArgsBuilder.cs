@@ -1,6 +1,6 @@
 ﻿using Gbm.Persistence.Repositories.Interfaces;
 using Gbm.Services.Git;
-using RA.Console.DependecyInjection.Args;
+using RA.Console.DependencyInjection.Args;
 
 namespace Gbm.Commands.BranchsCommands
 {

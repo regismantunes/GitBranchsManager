@@ -1,6 +1,6 @@
 ﻿using Gbm.Services.Initialization;
-using RA.Console.DependecyInjection;
-using RA.Console.DependecyInjection.Args;
+using Gbm.Services.Middleware;
+using RA.Console.DependencyInjection;
 
 namespace Gbm
 {
@@ -18,16 +18,12 @@ namespace Gbm
                 
                 var app = commandBuilder
                     .AddAssembly(typeof(Program).Assembly)
+                    .UseMiddleware<CommandsMiddleware>()
                     .UseDefaultHelpResources()
                     .UseOptimizedInitialization()
                     .Build();
 
                 return await app.RunAsync();
-            }
-            catch (ArgsValidationException vex)
-            {
-                MyConsole.WriteError(vex.Message);
-                return 2;
             }
             catch (Exception ex)
             {

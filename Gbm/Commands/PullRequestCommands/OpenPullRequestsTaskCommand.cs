@@ -2,7 +2,7 @@ using Gbm.Persistence.Repositories.Interfaces;
 using Gbm.Services.Git;
 using Gbm.Services.GitHub;
 using Gbm.Services.Jira;
-using RA.Console.DependecyInjection.Attributes;
+using RA.Console.DependencyInjection.Attributes;
 
 namespace Gbm.Commands.PullRequestCommands
 {
@@ -60,7 +60,6 @@ namespace Gbm.Commands.PullRequestCommands
                 }
 
                 MyConsole.WriteSucess("🚀 All PRs created and updated with related links.");
-                MyConsole.WriteEmptyLine();
                 MyConsole.WriteHeader($"--- Summary ---");
                 MyConsole.WriteInfo($"[{taskId}] {taskInfo.Summary}");
                 foreach (var pr in relatedPRs)

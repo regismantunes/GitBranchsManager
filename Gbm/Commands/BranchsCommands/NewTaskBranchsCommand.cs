@@ -1,5 +1,5 @@
 using Gbm.Services.Git;
-using RA.Console.DependecyInjection.Attributes;
+using RA.Console.DependencyInjection.Attributes;
 
 namespace Gbm.Commands.BranchsCommands
 {

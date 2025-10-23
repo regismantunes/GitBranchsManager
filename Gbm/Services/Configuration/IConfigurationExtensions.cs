@@ -1,5 +1,5 @@
 using Gbm.Services.Initialization;
-using RA.Console.DependecyInjection.Args;
+using RA.Console.DependencyInjection.Args;
 using Gbm.Persistence.Configuration;
 using Microsoft.Extensions.Configuration;
 

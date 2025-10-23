@@ -1,7 +1,7 @@
 using Gbm.Persistence.Configuration;
 using Gbm.Services.Configuration;
 using Microsoft.Extensions.Configuration;
-using RA.Console.DependecyInjection.Attributes;
+using RA.Console.DependencyInjection.Attributes;
 
 namespace Gbm.Commands.ConfigurationCommands
 {

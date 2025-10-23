@@ -1,5 +1,5 @@
 using Gbm.Persistence.Repositories.Interfaces;
-using RA.Console.DependecyInjection.Attributes;
+using RA.Console.DependencyInjection.Attributes;
 
 namespace Gbm.Commands.PullRequestCommands
 {
