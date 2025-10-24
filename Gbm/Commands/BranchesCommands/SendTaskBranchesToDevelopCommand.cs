@@ -1,14 +1,14 @@
 using Gbm.Services.Git;
 using RA.Console.DependencyInjection.Attributes;
 
-namespace Gbm.Commands.BranchsCommands
+namespace Gbm.Commands.BranchesCommands
 {
-    public class SendTaskBranchsToDevelopCommand(IGitTool gitTool)
+    public class SendTaskBranchesToDevelopCommand(IGitTool gitTool)
     {
-        [CommandAsyncWithArgsBuilderAsync<BranchsCommandArgsBuilder>("-d",
+        [CommandAsyncWithArgsBuilderAsync<BranchesCommandArgsBuilder>("-d",
             Description = "Merge task into develop and push",
             Example = "gbm -d <TaskId> [Repos...]",
-            Group = CommandGroups.Branchs,
+            Group = CommandGroups.Branches,
             Order = 5)]
         public async Task<int> ExecuteAsync(string taskBranch, string[] repositories, CancellationToken cancellationToken = default)
         {

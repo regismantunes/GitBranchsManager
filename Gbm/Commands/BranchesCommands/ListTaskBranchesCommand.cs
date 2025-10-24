@@ -1,19 +1,19 @@
 using Gbm.Services.Git;
 using RA.Console.DependencyInjection.Attributes;
 
-namespace Gbm.Commands.BranchsCommands
+namespace Gbm.Commands.BranchesCommands
 {
-    public class ListTaskBranchsCommand(IGitTool gitTool)
+    public class ListTaskBranchesCommand(IGitTool gitTool)
     {
-        [CommandAsyncWithArgsBuilderAsync<BranchsCommandArgsBuilder>("-l", 
-            Description = "List repositories with task branchs", 
+        [CommandAsyncWithArgsBuilderAsync<BranchesCommandArgsBuilder>("-l", 
+            Description = "List repositories with task branches", 
             Example = "gbm -l <TaskId> [Repos...]", 
-            Group = CommandGroups.Branchs,
+            Group = CommandGroups.Branches,
             Order = 1)]
         public async Task<int> ExecuteAsync(string taskBranch, string[] repositories, CancellationToken cancellationToken = default)
         {
             gitTool.ShowGitOutput = false;
-            MyConsole.WriteCommandHeader("🧾 Listing repositories with task branchs...");
+            MyConsole.WriteCommandHeader("🧾 Listing repositories with task branches...");
             foreach (var repo in repositories)
             {
                 gitTool.SetRepository(repo);

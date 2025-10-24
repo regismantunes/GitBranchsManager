@@ -1,14 +1,14 @@
 using Gbm.Services.Git;
 using RA.Console.DependencyInjection.Attributes;
 
-namespace Gbm.Commands.BranchsCommands
+namespace Gbm.Commands.BranchesCommands
 {
-    public class RemoveTaskBranchsCommand(IGitTool gitTool)
+    public class RemoveTaskBranchesCommand(IGitTool gitTool)
     {
-        [CommandAsyncWithArgsBuilderAsync<BranchsCommandArgsBuilder>("-r",
+        [CommandAsyncWithArgsBuilderAsync<BranchesCommandArgsBuilder>("-r",
             Description = "Remove local task branches",
             Example = "gbm -r <TaskId> [Repos...]",
-            Group = CommandGroups.Branchs,
+            Group = CommandGroups.Branches,
             Order = 6)]
         public async Task<int> ExecuteAsync(string taskBranch, string[] repositories, CancellationToken cancellationToken = default)
         {

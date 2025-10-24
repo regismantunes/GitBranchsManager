@@ -5,3 +5,6 @@ dotnet_diagnostic.IDE0022.severity = none
 
 # IDE0058: Expression value is never used
 dotnet_diagnostic.IDE0058.severity = none
+
+# CRR0050: string.Compare can be used
+dotnet_diagnostic.CRR0050.severity = none

@@ -69,6 +69,11 @@
             return input;
         }
 
+        public static string ReadLine()
+        {
+            return Console.ReadLine() ?? string.Empty;
+        }
+
         public static void WriteEmptyLine()
         {
             Console.WriteLine();

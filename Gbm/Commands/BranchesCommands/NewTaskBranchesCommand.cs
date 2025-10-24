@@ -1,14 +1,14 @@
 using Gbm.Services.Git;
 using RA.Console.DependencyInjection.Attributes;
 
-namespace Gbm.Commands.BranchsCommands
+namespace Gbm.Commands.BranchesCommands
 {
-	public class NewTaskBranchsCommand(IGitTool gitTool)
+	public class NewTaskBranchesCommand(IGitTool gitTool)
 	{
-		[CommandAsyncWithArgsBuilderAsync<BranchsCommandArgsBuilder>("-n",
-			Description = "Create new branchs for the task",
+		[CommandAsyncWithArgsBuilderAsync<BranchesCommandArgsBuilder>("-n",
+			Description = "Create new branches for the task",
 			Example = "gbm -n <TaskId> [Repos...]",
-			Group = CommandGroups.Branchs,
+			Group = CommandGroups.Branches,
 			Order = 0)]
 		public async Task<int> ExecuteAsync(string taskBranch, string[] repositories, CancellationToken cancellationToken = default)
 		{

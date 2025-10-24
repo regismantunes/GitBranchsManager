@@ -40,19 +40,19 @@ namespace Gbm.Services.Git
             {
                 DisableShowGitOutput();
                 var gitResult = await RunGitAsync("branch --list", cancellationToken);
-                var branchs = gitResult
+                var branches = gitResult
                     .Split('\n')
                     .Select(b => b.Replace("* ", string.Empty))
                     .Select(b => b.Trim());
-                if (!branchs.Any())
+                if (!branches.Any())
                     throw new InvalidOperationException("Could not determine the main branch. Please ensure you are in a valid Git repository.");
 
                 var mainBranch = "master";
-                if (branchs.Contains(mainBranch))
+                if (branches.Contains(mainBranch))
                     return mainBranch;
 
                 mainBranch = "main";
-                if (branchs.Contains(mainBranch))
+                if (branches.Contains(mainBranch))
                     return mainBranch;
 
                 throw new InvalidOperationException("Could not determine the main branch. Please ensure you are in a valid Git repository.");

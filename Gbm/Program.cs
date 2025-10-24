@@ -20,7 +20,6 @@ namespace Gbm
                     .AddAssembly(typeof(Program).Assembly)
                     .UseMiddleware<CommandsMiddleware>()
                     .UseDefaultHelpResources()
-                    .UseOptimizedInitialization()
                     .Build();
 
                 return await app.RunAsync();

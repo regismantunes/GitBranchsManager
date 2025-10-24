@@ -2,9 +2,9 @@
 using Gbm.Services.Git;
 using RA.Console.DependencyInjection.Args;
 
-namespace Gbm.Commands.BranchsCommands
+namespace Gbm.Commands.BranchesCommands
 {
-    public class BranchsCommandArgsBuilder(ITaskInfoRepository taskInfoRepository, IGitTool gitTool) : IArgsBuilderAsync
+    public class BranchesCommandArgsBuilder(ITaskInfoRepository taskInfoRepository, IGitTool gitTool) : IArgsBuilderAsync
     {
         public async Task<IDictionary<string, object>> BuildAsync(string[] args, CancellationToken cancellationToken = default)
         {
