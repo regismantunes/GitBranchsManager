@@ -54,6 +54,7 @@ namespace Gbm.Commands.TaskInfoCommands
                 var repositories = repositoriesInput
                     .Split(' ')
                     .Select(r => r.Trim());
+                var isValidRepositories = true;
                 foreach (var repository in repositories)
                 {
                     try
@@ -62,11 +63,14 @@ namespace Gbm.Commands.TaskInfoCommands
                     }
                     catch(DirectoryNotFoundException)
                     {
+                        isValidRepositories = false;
                         MyConsole.WriteError($"The repository {repository} was not found. Please, inform valid repository names:");
                     }
                 }
 
-                await ConsoleApp.Current.RunCommandAsync("-n", ["-n", taskId, ..repositories], cancellationToken);
+                if (isValidRepositories)
+                    return await ConsoleApp.Current!.RunCommandAsync("-n", ["-n", taskId, .. repositories], cancellationToken);
+
             } while (true);
 
             return 0;

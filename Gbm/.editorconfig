@@ -8,3 +8,6 @@ dotnet_diagnostic.IDE0058.severity = none
 
 # CRR0050: string.Compare can be used
 dotnet_diagnostic.CRR0050.severity = none
+
+# CRR0029: ConfigureAwait(true) is called implicitly
+dotnet_diagnostic.CRR0029.severity = none
