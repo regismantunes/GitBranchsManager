@@ -1,10 +1,12 @@
 using Gbm.Persistence.Repositories.Interfaces;
+using Gbm.Services.Git;
+using RA.Console.DependencyInjection;
 using RA.Console.DependencyInjection.Attributes;
 using TextCopy;
 
 namespace Gbm.Commands.TaskInfoCommands
 {
-    public class SaveTaskInfoCommand(ITaskInfoRepository repository)
+    public class SaveTaskInfoCommand(ITaskInfoRepository repository, IGitTool gitTool)
     {
         [CommandAsync("-t",
             Description = "Save task information",
@@ -41,6 +43,32 @@ namespace Gbm.Commands.TaskInfoCommands
             MyConsole.WriteInfo($"→ Description: {taskDescription}");
             await repository.SaveAsync(taskId, taskSummary, taskDescription, taskBranch, cancellationToken);
             MyConsole.WriteSucess($"✅ Task info was sucessfuly saved");
+
+            MyConsole.WriteStep("→ If you want to create the repositories branches inform the repositories names:");
+            do
+            {
+                var repositoriesInput = MyConsole.ReadLine();
+                if (string.IsNullOrWhiteSpace(repositoriesInput))
+                    break;
+
+                var repositories = repositoriesInput
+                    .Split(' ')
+                    .Select(r => r.Trim());
+                foreach (var repository in repositories)
+                {
+                    try
+                    {
+                        gitTool.SetRepository(repository);
+                    }
+                    catch(DirectoryNotFoundException)
+                    {
+                        MyConsole.WriteError($"The repository {repository} was not found. Please, inform valid repository names:");
+                    }
+                }
+
+                await ConsoleApp.Current.RunCommandAsync("-n", ["-n", taskId, ..repositories], cancellationToken);
+            } while (true);
+
             return 0;
         }
 
