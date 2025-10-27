@@ -19,6 +19,13 @@ namespace Gbm.Commands.BranchesCommands
                 MyConsole.WriteHeader($"--- Processing repository: {repo} ---");
                 gitTool.SetRepository(repo);
 
+                if (await gitTool.BranchExistsAsync(taskBranch, cancellationToken))
+				{
+                    MyConsole.WriteStep($"→ Branch '{taskBranch}' already exists");
+                    await gitTool.CheckoutAsync(taskBranch, cancellationToken);
+                    continue;
+                }
+
                 MyConsole.WriteStep($"→ Checking out to main branch");
 				await gitTool.CheckoutToMainAsync(cancellationToken);
 
