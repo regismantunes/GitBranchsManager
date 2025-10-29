@@ -11,11 +11,11 @@ namespace Gbm
         {
             try
             {
-                MyConsole.SetEncoding();
+                MyConsole.SetDefaults();
 
                 var commandBuilder = new ConsoleAppBuilder(args);
                 commandBuilder.Services.AddAllServices();
-                
+
                 var app = commandBuilder
                     .AddAssembly(typeof(Program).Assembly)
                     .UseMiddleware<CommandsMiddleware>()
@@ -28,6 +28,10 @@ namespace Gbm
             {
                 MyConsole.WriteError($"Error: {ex.Message}");
                 return 1;
+            }
+            finally
+            {
+                MyConsole.ResetConsole();
             }
         }
     }

@@ -192,17 +192,24 @@ namespace Gbm.Services.Git
             MyConsole.WriteStep($"🔎 Searching for repositories with branch {branch}...");
             var repositoriesWithBranch = new List<string>();
             var directories = Directory.GetDirectories(BasePath);
+
+            var count = 0m;
+            decimal total = directories.Length;
+            const int progressBarWidth = 75;
+            MyConsole.StartProgressBar(progressBarWidth);
             foreach (var directory in directories)
             {
+                count++;
+                MyConsole.UpdateProgressBar(count / total);
+                
                 var repositoryName = Path.GetFileName(directory);
                 if (string.IsNullOrWhiteSpace(repositoryName)) continue;
+                
                 SetRepository(repositoryName);
                 if (await BranchExistsAsync(branch, cancellationToken))
-                {
                     repositoriesWithBranch.Add(repositoryName);
-                }
             }
-            MyConsole.BackToPreviousLine();
+            MyConsole.FinishProgressBar();
             return repositoriesWithBranch;
         }
 
