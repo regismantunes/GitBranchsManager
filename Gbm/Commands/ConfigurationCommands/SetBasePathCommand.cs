@@ -15,6 +15,13 @@ namespace Gbm.Commands.ConfigurationCommands
         public int Execute(string value)
         {
             MyConsole.WriteCommandHeader("⚙️ Updating configuration: Base Path...");
+
+            if (!Path.IsPathFullyQualified(value))
+            {
+                MyConsole.WriteError("❌ The provided path is not valid. Please provide a fully qualified path.");
+                return 1;
+            }
+
             configuration.SetValue(ConfigurationVariable.BasePath, value);
             MyConsole.WriteSucess($"✅ Base path updated to '{value}' (User scope)");
             return 0;

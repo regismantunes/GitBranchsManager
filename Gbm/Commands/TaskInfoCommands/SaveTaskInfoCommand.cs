@@ -1,12 +1,15 @@
+using Gbm.Persistence.Configuration;
 using Gbm.Persistence.Repositories.Interfaces;
+using Gbm.Services.Configuration;
 using Gbm.Services.Git;
+using Microsoft.Extensions.Configuration;
 using RA.Console.DependencyInjection;
 using RA.Console.DependencyInjection.Attributes;
 using TextCopy;
 
 namespace Gbm.Commands.TaskInfoCommands
 {
-    public class SaveTaskInfoCommand(ITaskInfoRepository repository, IGitTool gitTool)
+    public class SaveTaskInfoCommand(ITaskInfoRepository repository, IGitTool gitTool, IConfiguration configuration)
     {
         [CommandAsync("-t",
             Description = "Save task information",
@@ -17,14 +20,6 @@ namespace Gbm.Commands.TaskInfoCommands
         {
             MyConsole.WriteCommandHeader($"💾 Saving task information...");
             MyConsole.WriteStep($"Please, inform the task details:");
-
-            var taskBranch = GetTaskBranch(taskId);
-            if (taskBranch == ConsoleKey.Escape.ToString())
-            {
-                MyConsole.WriteError("❌ Operation cancelled by user.");
-                return 1;
-            }
-            MyConsole.WriteInfo($"→ Branch: {taskBranch}");
 
             var taskSummary = GetSummary();
             if (taskSummary == ConsoleKey.Escape.ToString())
@@ -41,6 +36,15 @@ namespace Gbm.Commands.TaskInfoCommands
                 return 1;
             }
             MyConsole.WriteInfo($"→ Description: {taskDescription}");
+
+            var taskBranch = GetTaskBranch(taskId, taskSummary);
+            if (taskBranch == ConsoleKey.Escape.ToString())
+            {
+                MyConsole.WriteError("❌ Operation cancelled by user.");
+                return 1;
+            }
+            MyConsole.WriteInfo($"→ Branch: {taskBranch}");
+
             await repository.SaveAsync(taskId, taskSummary, taskDescription, taskBranch, cancellationToken);
             MyConsole.WriteSucess($"✅ Task info was sucessfuly saved");
 
@@ -76,12 +80,32 @@ namespace Gbm.Commands.TaskInfoCommands
             return 0;
         }
 
-        private string GetTaskBranch(string taskId)
+        private string GetTaskBranch(string taskId, string taskSummary)
         {
-            MyConsole.WriteStep($"→ Branch (enter with the branch name or press ENTER to accept the default: 'feature/{taskId}'):");
-            var taskBranch = MyConsole.ReadLineThenClear();
-            if (string.IsNullOrWhiteSpace(taskBranch))
-                taskBranch = $"feature/{taskId}";
+            var defaultBranchName = configuration.GetValue(ConfigurationVariable.BranchDefaultNameFormat);
+
+            string taskBranch;
+            if (string.IsNullOrEmpty(defaultBranchName))
+            {
+                MyConsole.WriteStep($"→ Branch (enter with the branch name):");
+                do
+                {
+                    taskBranch = MyConsole.ReadLineThenClear();
+                    if (string.IsNullOrWhiteSpace(taskBranch))
+                        MyConsole.WriteError("❌ Branch name can't be empty. Please enter with a valid branch name:");
+                } while (string.IsNullOrWhiteSpace(taskBranch));
+                return taskBranch!;
+            }
+            else
+            {
+                var defaultTaskBranch = defaultBranchName
+                    .Replace("{TaskId}", taskId)
+                    .Replace("{TaskSummary}", taskSummary);
+                MyConsole.WriteStep($"→ Branch (enter with the branch name or press ENTER to accept the default: '{defaultTaskBranch}'):");
+                taskBranch = MyConsole.ReadLineThenClear();
+                if (string.IsNullOrWhiteSpace(taskBranch))
+                    taskBranch = defaultTaskBranch;
+            }
             return taskBranch!;
         }
 

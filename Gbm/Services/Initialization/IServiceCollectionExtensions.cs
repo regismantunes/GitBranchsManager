@@ -35,7 +35,7 @@ namespace Gbm.Services.Initialization
 
             var builder = new ConfigurationBuilder()
                 .SetBasePath(AppDataFolder)
-                .AddJsonFile(Path.GetFileName(configFilePath), optional: false, reloadOnChange: true);
+                .AddJsonFile(Path.GetFileName(configFilePath), optional: false, reloadOnChange: false);
 
             var configuration = builder.Build();
             services.AddSingleton<IConfiguration>(configuration);

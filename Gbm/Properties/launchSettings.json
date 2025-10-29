@@ -1,8 +1,7 @@
 {
   "profiles": {
     "Gbm": {
-      "commandName": "Project",
-      "commandLineArgs": "-l SSM-942"
+      "commandName": "Project"
     }
   }
 }

@@ -11,6 +11,7 @@
         JiraConsumerKey,
         JiraConsumerSecret,
         JiraAccessToken,
-        JiraTokenSecrety
+        JiraTokenSecrety,
+        BranchDefaultNameFormat
     }
 }
