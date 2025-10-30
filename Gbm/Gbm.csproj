@@ -9,7 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="Atlassian.SDK" Version="13.0.0" />
-    <PackageReference Include="RegisAntunes.Console.DependencyInjection" Version="0.2.5" />
+    <PackageReference Include="RegisAntunes.Console.DependencyInjection" Version="0.2.6" />
     <PackageReference Include="TextCopy" Version="6.2.1" />
   </ItemGroup>
 
