@@ -34,7 +34,7 @@ namespace Gbm.Commands.PullRequestCommands
                     if (await repository.ExistsAsync(taskId, repo, cancellationToken))
                         continue;
                     
-                    gitTool.SetRepository(repo);
+                    await gitTool.SetRepositoryAsync(repo, cancellationToken);
                     gitTool.ShowGitOutput = true;
 
                     if (pushLocalChanges)

@@ -29,10 +29,15 @@ public class FakeGitTool : IGitTool
     public Task PullAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
     public Task PullOriginAsync(string branchFrom, CancellationToken cancellationToken = default) => Task.CompletedTask;
     public Task PushAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
-    public void SetRepository(string repository) { }
+    public Task SetRepositoryAsync(string repository, CancellationToken cancellationToken = default) => Task.CompletedTask;
     public Task<IEnumerable<string>> GetRepositoriesWithBranchAsync(string branch, CancellationToken cancellationToken = default)
     {
         _reposByBranch.TryGetValue(branch, out var repos);
-        return Task.FromResult<IEnumerable<string>>(repos ?? Array.Empty<string>());
+        return Task.FromResult<IEnumerable<string>>(repos ?? []);
+    }
+
+    public IAsyncEnumerable<string> GetAllRepositoriesAsync(CancellationToken cancellationToken = default)
+    {
+        return _reposByBranch.Values.SelectMany(r => r).ToAsyncEnumerable();
     }
 }

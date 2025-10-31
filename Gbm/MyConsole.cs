@@ -68,6 +68,26 @@ namespace Gbm
                 Console.CursorVisible = false;
             }
         }
+
+        public static bool ReadYesNo(string prompt)
+        {
+            WriteStep(string.Concat(prompt, " (Y/N)"));
+            while (true)
+            {
+                var key = Console.ReadKey(true);
+                if (key.Key == ConsoleKey.Y)
+                {
+                    WriteStep("✅ You selected: Yes");
+                    return true;
+                }
+                else if (key.Key == ConsoleKey.N)
+                {
+                    WriteStep("🛑 You selected: No");
+                    return false;
+                }
+                WriteStep("❌ You have pressed an invalid key. Please, Y or N:");
+            }
+        }
         #endregion
 
         #region Progress Bar

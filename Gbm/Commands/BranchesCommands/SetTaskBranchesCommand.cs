@@ -16,7 +16,7 @@ namespace Gbm.Commands.BranchesCommands
             MyConsole.WriteCommandHeader("🔀 Checking out task branches...");
             foreach (var repo in repositories)
             {
-                gitTool.SetRepository(repo);
+                await gitTool.SetRepositoryAsync(repo, cancellationToken);
                 MyConsole.WriteStep($"→ Setting local branch '{taskBranch}' from {repo}");
                 await gitTool.CheckoutAsync(taskBranch, cancellationToken);
             }

@@ -16,7 +16,7 @@ namespace Gbm.Commands.BranchesCommands
             MyConsole.WriteCommandHeader("🧾 Listing repositories with task branches...");
             foreach (var repo in repositories)
             {
-                gitTool.SetRepository(repo);
+                await gitTool.SetRepositoryAsync(repo, cancellationToken);
                 var branchExists = await gitTool.BranchExistsAsync(taskBranch, cancellationToken);
                 if (branchExists)
                     MyConsole.WriteStep($"→ Branch '{taskBranch}' exists in {repo}");

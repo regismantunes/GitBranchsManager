@@ -17,7 +17,7 @@ namespace Gbm.Commands.BranchesCommands
             foreach (var repo in repositories)
             {
                 if (repo.EndsWith("sdk", StringComparison.OrdinalIgnoreCase)) continue;
-                gitTool.SetRepository(repo);
+                await gitTool.SetRepositoryAsync(repo, cancellationToken);
                 var branchExists = await gitTool.BranchExistsAsync(taskBranch, cancellationToken);
                 if (!branchExists) continue;
                 MyConsole.WriteHeader($"--- Processing repository: {repo} ---");

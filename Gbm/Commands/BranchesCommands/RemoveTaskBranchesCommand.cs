@@ -16,7 +16,7 @@ namespace Gbm.Commands.BranchesCommands
             MyConsole.WriteCommandHeader("🧹 Removing local task branches...");
             foreach (var repo in repositories)
             {
-                gitTool.SetRepository(repo);
+                await gitTool.SetRepositoryAsync(repo, cancellationToken);
                 MyConsole.WriteStep($"→ Deleting local branch '{taskBranch}' from {repo}");
                 await gitTool.DeleteLocalBranchAsync(taskBranch, cancellationToken);
             }

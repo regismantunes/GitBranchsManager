@@ -1,9 +1,13 @@
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 
 namespace Gbm.Services.Git
 {
     public class GitTool : IGitTool
     {
+        private const string RepositoryNotSetMessage = "Repository is not set. Please set it using SetRepository method.";
+
         public string? WorkingDirectory { get; private set; }
         public string BasePath { get; set; }
 
@@ -27,11 +31,29 @@ namespace Gbm.Services.Git
             ShowGitOutput = PreviousShowGitOutput;
         }
 
-        public void SetRepository(string repository)
+        public Task SetRepositoryAsync(string repository, CancellationToken cancellationToken = default)
+            => SetRepositoryAsync(repository, validate: true, cancellationToken);
+
+        private async Task SetRepositoryAsync(string repository, bool validate, CancellationToken cancellationToken = default)
         {
             var workingDirectory = Path.Combine(BasePath, repository);
             if (!Directory.Exists(workingDirectory)) throw new DirectoryNotFoundException($"The directory '{workingDirectory}' does not exist.");
+            if (validate &&
+                !await IsGitRepositoryAsync(workingDirectory, cancellationToken))
+                throw new InvalidOperationException($"The directory '{workingDirectory}' is not a valid Git repository.");
             WorkingDirectory = workingDirectory;
+        }
+
+        public async IAsyncEnumerable<string> GetAllRepositoriesAsync([EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            var directories = Directory.GetDirectories(BasePath);
+            foreach (var directory in directories)
+            {
+                var repositoryName = Path.GetFileName(directory);
+                if (string.IsNullOrWhiteSpace(repositoryName)) continue;
+                if (await IsGitRepositoryAsync(directory, cancellationToken))
+                    yield return repositoryName;
+            }
         }
 
         public async Task<string> GetMainBranchAsync(CancellationToken cancellationToken = default)
@@ -56,6 +78,20 @@ namespace Gbm.Services.Git
                     return mainBranch;
 
                 throw new InvalidOperationException("Could not determine the main branch. Please ensure you are in a valid Git repository.");
+            }
+            finally
+            {
+                RestorePreviousShowGitOutput();
+            }
+        }
+
+        public async Task<bool> IsGitRepositoryAsync(string workingDirectory, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                DisableShowGitOutput();
+                var result = await RunGitAsync(workingDirectory, "rev-parse --is-inside-work-tree", cancellationToken);
+                return result.Trim() == "true";
             }
             finally
             {
@@ -189,52 +225,78 @@ namespace Gbm.Services.Git
 
         public async Task<IEnumerable<string>> GetRepositoriesWithBranchAsync(string branch, CancellationToken cancellationToken = default)
         {
-            MyConsole.WriteStep($"🔎 Searching for repositories with branch {branch}...");
-            var repositoriesWithBranch = new List<string>();
-            var directories = Directory.GetDirectories(BasePath);
-
-            var count = 0m;
-            decimal total = directories.Length;
-            const int progressBarWidth = 75;
-            MyConsole.StartProgressBar(progressBarWidth);
-            foreach (var directory in directories)
+            var previousWorkingDirectory = WorkingDirectory;
+            try
             {
-                count++;
-                MyConsole.UpdateProgressBar(count / total);
-                
-                var repositoryName = Path.GetFileName(directory);
-                if (string.IsNullOrWhiteSpace(repositoryName)) continue;
-                
-                SetRepository(repositoryName);
-                if (await BranchExistsAsync(branch, cancellationToken))
-                    repositoriesWithBranch.Add(repositoryName);
+                MyConsole.WriteStep($"🔎 Searching for repositories with branch {branch}...");
+                var repositoriesWithBranch = new List<string>();
+                var directories = Directory.GetDirectories(BasePath);
+
+                var count = 0m;
+                decimal total = directories.Length;
+                const int progressBarWidth = 75;
+                MyConsole.StartProgressBar(progressBarWidth);
+                foreach (var directory in directories)
+                {
+                    count++;
+                    MyConsole.UpdateProgressBar(count / total);
+
+                    var repositoryName = Path.GetFileName(directory);
+                    if (string.IsNullOrWhiteSpace(repositoryName)) continue;
+
+                    await SetRepositoryAsync(repositoryName, validate: false, cancellationToken);
+                    if (await BranchExistsAsync(branch, cancellationToken))
+                        repositoriesWithBranch.Add(repositoryName);
+                }
+                MyConsole.FinishProgressBar();
+                return repositoriesWithBranch;
             }
-            MyConsole.FinishProgressBar();
-            return repositoriesWithBranch;
+            finally
+            {
+                WorkingDirectory = previousWorkingDirectory;
+            }
         }
 
         private async Task<bool> RunGitOkAsync(string arguments, CancellationToken cancellationToken = default)
         {
-            var result = await RunGitAndGetResultAsync(arguments, cancellationToken);
+            ValidateWorkingDirectory(WorkingDirectory, RepositoryNotSetMessage);
+
+            var result = await RunGitAndGetResultAsync(WorkingDirectory!, arguments, cancellationToken);
             return result.ExitCode == 0;
         }
 
         private async Task<string> RunGitAsync(string arguments, CancellationToken cancellationToken = default)
         {
-            var result = await RunGitAndGetResultAsync(arguments, cancellationToken);
+            ValidateWorkingDirectory(WorkingDirectory, RepositoryNotSetMessage);
+
+            var result = await RunGitAndGetResultAsync(WorkingDirectory!, arguments, cancellationToken);
             return result.Output;
         }
 
-        private async Task<RunGitResult> RunGitAndGetResultAsync(string arguments, CancellationToken cancellationToken = default)
+        private async Task<string> RunGitAsync(string workingDirectory, string arguments, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrEmpty(WorkingDirectory))
-                throw new InvalidOperationException("Repository is not set. Please set it using SetRepository method.");
+            ValidateWorkingDirectory(workingDirectory);
 
+            var result = await RunGitAndGetResultAsync(workingDirectory, arguments, cancellationToken);
+            return result.Output;
+        }
+
+        private static void ValidateWorkingDirectory(string? workingDirectory, string argumentNullExceptionMessage = "WorkingDirectory should not be empty.")
+        {
+            if (string.IsNullOrEmpty(workingDirectory))
+                throw new ArgumentNullException(nameof(workingDirectory), argumentNullExceptionMessage);
+            
+            if (!Directory.Exists(workingDirectory))
+                throw new DirectoryNotFoundException($"The directory '{workingDirectory}' does not exist.");
+        }
+
+        private async Task<RunGitResult> RunGitAndGetResultAsync(string workingDirectory, string arguments, CancellationToken cancellationToken = default)
+        {
             var psi = new ProcessStartInfo
             {
                 FileName = "git",
                 Arguments = arguments,
-                WorkingDirectory = WorkingDirectory,
+                WorkingDirectory = workingDirectory,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,

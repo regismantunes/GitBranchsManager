@@ -5,6 +5,8 @@ using Gbm.Services.Git;
 using Microsoft.Extensions.Configuration;
 using RA.Console.DependencyInjection;
 using RA.Console.DependencyInjection.Attributes;
+using System.Threading;
+using System.Threading.Tasks;
 using TextCopy;
 
 namespace Gbm.Commands.TaskInfoCommands
@@ -48,36 +50,65 @@ namespace Gbm.Commands.TaskInfoCommands
             await repository.SaveAsync(taskId, taskSummary, taskDescription, taskBranch, cancellationToken);
             MyConsole.WriteSucess($"✅ Task info was sucessfuly saved");
 
-            MyConsole.WriteStep("→ If you want to create the repositories branches inform the repositories names:");
+            if (!MyConsole.ReadYesNo("→ Do you want to create the repositories branches?"))
+                return 0;
+
+            var repositoriesToCreateBranch = await SelectRepositoriesToCreateBranchAsync(cancellationToken);
+            return await ConsoleApp.Current!.RunCommandAsync("-n", ["-n", taskId, .. repositoriesToCreateBranch], cancellationToken);
+        }
+
+        private async Task<IEnumerable<string>> SelectRepositoriesToCreateBranchAsync(CancellationToken cancellationToken = default)
+        {
+            MyConsole.WriteStep("→ Select the repositories you want to create a branch for this task:");
+            var repositories = new List<string>();
+            await foreach (var repository in gitTool.GetAllRepositoriesAsync(cancellationToken))
+            {
+                repositories.Add(repository);
+                MyConsole.WriteInfo($"{repositories.Count} - {repository}");
+            }
+
             do
             {
                 var repositoriesInput = MyConsole.ReadLine();
                 if (string.IsNullOrWhiteSpace(repositoriesInput))
-                    break;
+                {
+                    MyConsole.WriteError("❌ Please, inform at least one repository name or index separated by space:");
+                    continue;
+                }
 
-                var repositories = repositoriesInput
+                var repositoriesToCreateBranch = new List<string>();
+                var selectedRepositories = repositoriesInput
                     .Split(' ')
                     .Select(r => r.Trim());
                 var isValidRepositories = true;
-                foreach (var repository in repositories)
+                foreach (var repository in selectedRepositories)
                 {
-                    try
+                    if (int.TryParse(repository, out var index))
                     {
-                        gitTool.SetRepository(repository);
+                        if (index < 1 || index > repositories.Count)
+                        {
+                            MyConsole.WriteError($"❌ Invalid repository index: {index}. Please, try again:");
+                            isValidRepositories = false;
+                            break;
+                        }
+                        repositoriesToCreateBranch.Add(repositories[index - 1]);
                     }
-                    catch(DirectoryNotFoundException)
+                    else
                     {
-                        isValidRepositories = false;
-                        MyConsole.WriteError($"The repository {repository} was not found. Please, inform valid repository names:");
+                        if (!repositories.Contains(repository))
+                        {
+                            MyConsole.WriteError($"❌ Invalid repository name: {repository}. Please, try again:");
+                            isValidRepositories = false;
+                            break;
+                        }
+                        repositoriesToCreateBranch.Add(repository);
                     }
                 }
 
                 if (isValidRepositories)
-                    return await ConsoleApp.Current!.RunCommandAsync("-n", ["-n", taskId, .. repositories], cancellationToken);
+                    return repositoriesToCreateBranch;
 
             } while (true);
-
-            return 0;
         }
 
         private string GetTaskBranch(string taskId, string taskSummary)
