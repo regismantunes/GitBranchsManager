@@ -5,6 +5,7 @@ using Gbm.Services.Git;
 using Microsoft.Extensions.Configuration;
 using RA.Console.DependencyInjection;
 using RA.Console.DependencyInjection.Attributes;
+using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using TextCopy;
@@ -95,7 +96,7 @@ namespace Gbm.Commands.TaskInfoCommands
                     }
                     else
                     {
-                        if (!repositories.Contains(repository))
+                        if (!repositories.Contains(repository, StringComparer.Create(CultureInfo.InvariantCulture, ignoreCase: true)))
                         {
                             MyConsole.WriteError($"❌ Invalid repository name: {repository}. Please, try again:");
                             isValidRepositories = false;
