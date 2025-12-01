@@ -3,11 +3,7 @@ using Gbm.Services.Initialization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration.Json;
 using Microsoft.Extensions.FileProviders;
-using Newtonsoft.Json.Linq;
 using RA.Console.DependencyInjection.Args;
-using System;
-using System.IO;
-using System.Linq;
 using System.Text.Json;
 
 namespace Gbm.Services.Configuration
@@ -19,11 +15,29 @@ namespace Gbm.Services.Configuration
             return configuration[variable.ToString()];
         }
 
+        public static T? GetValue<T>(this IConfiguration configuration, ConfigurationVariable variable)
+        {
+            return configuration.GetValue<T>(variable.ToString());
+        }
+
+        public static T GetValue<T>(this IConfiguration configuration, ConfigurationVariable variable, T defaultValue)
+        {
+            return configuration.GetValue<T>(variable.ToString()) ?? defaultValue;
+        }
+
         public static void SetValue(this IConfiguration configuration, ConfigurationVariable variable, string value)
         {
             configuration[variable.ToString()] = value;
 
             SetValueOnFile(configuration, variable, value);
+        }
+
+        public static void SetValue(this IConfiguration configuration, ConfigurationVariable variable, bool value)
+        {
+            var textValue = value ? "true" : "false";
+            configuration[variable.ToString()] = textValue;
+
+            SetValueOnFile(configuration, variable, textValue);
         }
 
         private static void SetValueOnFile(this IConfiguration configuration, ConfigurationVariable variable, string value)

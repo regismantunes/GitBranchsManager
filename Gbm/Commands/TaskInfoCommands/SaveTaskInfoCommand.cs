@@ -60,20 +60,22 @@ namespace Gbm.Commands.TaskInfoCommands
 
         private async Task<IEnumerable<string>> SelectRepositoriesToCreateBranchAsync(CancellationToken cancellationToken = default)
         {
-            MyConsole.WriteStep("→ Select the repositories you want to create a branch for this task:");
+            MyConsole.WriteStep("→ Inform the repositories you want to create a branch for this task:");
+            var listRepositories = configuration.GetValue<bool>(ConfigurationVariable.ListRepositoriesAfterTaskCreation);
             var repositories = new List<string>();
             await foreach (var repository in gitTool.GetAllRepositoriesAsync(cancellationToken))
             {
                 repositories.Add(repository);
-                MyConsole.WriteInfo($"{repositories.Count} - {repository}");
+                if (listRepositories)
+                    MyConsole.WriteInfo($"{repositories.Count} - {repository}");
             }
-
+            
             do
             {
                 var repositoriesInput = MyConsole.ReadLine();
                 if (string.IsNullOrWhiteSpace(repositoriesInput))
                 {
-                    MyConsole.WriteError("❌ Please, inform at least one repository name or index separated by space:");
+                    MyConsole.WriteError($"❌ Please, inform one or more repositories names{(listRepositories ? " or indexes" : "")}, separated by space:");
                     continue;
                 }
 
@@ -84,7 +86,7 @@ namespace Gbm.Commands.TaskInfoCommands
                 var isValidRepositories = true;
                 foreach (var repository in selectedRepositories)
                 {
-                    if (int.TryParse(repository, out var index))
+                    if (listRepositories && int.TryParse(repository, out var index))
                     {
                         if (index < 1 || index > repositories.Count)
                         {

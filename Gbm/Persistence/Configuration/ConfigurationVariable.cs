@@ -12,6 +12,7 @@
         JiraConsumerSecret,
         JiraAccessToken,
         JiraTokenSecrety,
-        BranchDefaultNameFormat
+        BranchDefaultNameFormat,
+        ListRepositoriesAfterTaskCreation,
     }
 }
