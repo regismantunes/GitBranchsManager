@@ -19,9 +19,11 @@ namespace Gbm.Commands.BranchesCommands
             // Get task branch
             var taskId = args[1];
             var taskInfo = await taskInfoRepository.GetAsync(taskId, cancellationToken);
-            if (taskInfo == null)
+            if (taskInfo == null && command != "-s")
                 throw new ArgsValidationException($"Task with id '{taskId}' not found. You need firt to inform task details. Exmaple: gbm -t TaskId");
-            if (string.IsNullOrWhiteSpace(taskInfo.BranchName))
+            
+            var branchName = taskInfo == null ? taskId.ToLower() : taskInfo.BranchName;
+            if (string.IsNullOrWhiteSpace(branchName))
                 throw new ArgsValidationException($"Task with id '{taskId}' does not have a branch name defined. You need firt to inform task details. Exmaple: gbm -t TaskId");
 
             // Get repositories
@@ -29,14 +31,18 @@ namespace Gbm.Commands.BranchesCommands
 
             if (repositories is null)
             {
-                repositories = [.. (await gitTool.GetRepositoriesWithBranchAsync(taskInfo.BranchName, cancellationToken))];
+                if (branchName == "main" || branchName == "master")
+                    repositories = await gitTool.GetAllRepositoriesAsync(cancellationToken).ToArrayAsync(cancellationToken);
+                else
+                    repositories = [.. await gitTool.GetRepositoriesWithBranchAsync(branchName, cancellationToken)];
+
                 if (repositories.Length == 0)
-                    throw new ArgsValidationException($"No repositories found with branch '{taskInfo.BranchName}'.");
+                    throw new ArgsValidationException($"No repositories found with branch '{branchName}'.");
             }
 
             return new Dictionary<string, object>
             {
-                { "TaskBranch",  taskInfo.BranchName },
+                { "TaskBranch",  branchName },
                 { "Repositories", repositories }
             };
         }

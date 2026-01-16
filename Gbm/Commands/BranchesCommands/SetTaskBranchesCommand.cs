@@ -6,8 +6,8 @@ namespace Gbm.Commands.BranchesCommands
     public class SetTaskBranchesCommand(IGitTool gitTool)
     {
         [CommandAsyncWithArgsBuilderAsync<BranchesCommandArgsBuilder>("-s",
-            Description = "Checkout task branches",
-            Example = "gbm -s <TaskId> [Repos...]",
+            Description = "Checkout to task branches or common branches",
+            Example = "gbm -s <TaskId/Branch> [Repos...]",
             Group = CommandGroups.Branches,
             Order = 2)]
         public async Task<int> ExecuteAsync(string taskBranch, string[] repositories, CancellationToken cancellationToken = default)
@@ -18,7 +18,12 @@ namespace Gbm.Commands.BranchesCommands
             {
                 await gitTool.SetRepositoryAsync(repo, cancellationToken);
                 MyConsole.WriteStep($"→ Setting local branch '{taskBranch}' from {repo}");
-                await gitTool.CheckoutAsync(taskBranch, cancellationToken);
+                if (taskBranch == "main" || taskBranch == "master")
+                    await gitTool.CheckoutToMainAsync(cancellationToken);
+                else
+                    await gitTool.CheckoutAsync(taskBranch, cancellationToken);
+                MyConsole.WriteStep($"→ Pulling latest changes for branch '{taskBranch}' from {repo}");
+                await gitTool.PullAsync(cancellationToken);
             }
 
             MyConsole.WriteSucess($"✅ Repositories setted to {taskBranch}!");
