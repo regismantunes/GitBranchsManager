@@ -105,11 +105,15 @@ namespace Gbm.Services.Git
             await CheckoutAsync(mainBranch, cancellationToken);
         }
 
-        public async Task CheckoutAsync(string branch, CancellationToken cancellationToken = default)
+        public async Task<bool> CheckoutAsync(string branch, CancellationToken cancellationToken = default)
         {
             while (true)
             {
-                if (await RunGitOkAsync($"checkout {branch}", cancellationToken)) return;
+                var result = await RunGitAndGetResultAsync($"checkout {branch}", cancellationToken);
+                if (result.ExitCode == 0)
+                    return true;
+                if (result.Output.Contains($"error: pathspec '{branch}' did not match any file(s) known to git"))
+                    return false;
                 MyConsole.WriteError($"❌ It was not possible to checkout to '{branch}' branch.");
                 MyConsole.WriteError("🛑 Please resolve the not commited files, then press ENTER to continue...");
                 MyConsole.ReadLineThenClear();
@@ -255,6 +259,13 @@ namespace Gbm.Services.Git
             {
                 WorkingDirectory = previousWorkingDirectory;
             }
+        }
+
+        private Task<RunGitResult> RunGitAndGetResultAsync(string arguments, CancellationToken cancellationToken = default)
+        {
+            ValidateWorkingDirectory(WorkingDirectory, RepositoryNotSetMessage);
+
+            return RunGitAndGetResultAsync(WorkingDirectory!, arguments, cancellationToken);
         }
 
         private async Task<bool> RunGitOkAsync(string arguments, CancellationToken cancellationToken = default)

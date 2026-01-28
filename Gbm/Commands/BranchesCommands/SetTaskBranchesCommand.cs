@@ -20,8 +20,8 @@ namespace Gbm.Commands.BranchesCommands
                 MyConsole.WriteStep($"→ Setting local branch '{taskBranch}' from {repo}");
                 if (taskBranch == "main" || taskBranch == "master")
                     await gitTool.CheckoutToMainAsync(cancellationToken);
-                else
-                    await gitTool.CheckoutAsync(taskBranch, cancellationToken);
+                else if (!await gitTool.CheckoutAsync(taskBranch, cancellationToken))
+                    continue;
                 MyConsole.WriteStep($"→ Pulling latest changes for branch '{taskBranch}' from {repo}");
                 await gitTool.PullAsync(cancellationToken);
             }

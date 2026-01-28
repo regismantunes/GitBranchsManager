@@ -40,10 +40,11 @@ namespace Gbm.Commands.PullRequestCommands
                     if (pushLocalChanges)
                     {
                         MyConsole.WriteStep($"→ Checking out to '{taskInfo.BranchName}'");
-                        await gitTool.CheckoutAsync(taskInfo.BranchName, cancellationToken);
-
-                        MyConsole.WriteStep($"→ Pushing '{taskInfo.BranchName}'");
-                        await gitTool.PushAsync(cancellationToken);
+                        if (await gitTool.CheckoutAsync(taskInfo.BranchName, cancellationToken))
+                        {
+                            MyConsole.WriteStep($"→ Pushing '{taskInfo.BranchName}'");
+                            await gitTool.PushAsync(cancellationToken);
+                        }
                     }
 
                     MyConsole.WriteStep($"→ Creating PR in {repo}...");

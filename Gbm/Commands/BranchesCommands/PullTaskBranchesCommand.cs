@@ -20,10 +20,11 @@ namespace Gbm.Commands.BranchesCommands
                 await gitTool.SetRepositoryAsync(repo, cancellationToken);
 
                 MyConsole.WriteStep($"→ Checking out to '{taskBranch}'");
-                await gitTool.CheckoutAsync(taskBranch, cancellationToken);
-
-                MyConsole.WriteStep($"→ Pulling '{taskBranch}'");
-                await gitTool.PullAsync(cancellationToken);
+                if (await gitTool.CheckoutAsync(taskBranch, cancellationToken))
+                {
+                    MyConsole.WriteStep($"→ Pulling '{taskBranch}'");
+                    await gitTool.PullAsync(cancellationToken);
+                }
             }
 
             MyConsole.WriteSucess("✅ Branch's task pulled!");

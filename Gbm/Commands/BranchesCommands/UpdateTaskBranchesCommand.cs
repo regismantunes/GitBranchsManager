@@ -19,9 +19,11 @@ namespace Gbm.Commands.BranchesCommands
                 MyConsole.WriteHeader($"--- Processing repository: {repo} ---");
                 await gitTool.SetRepositoryAsync(repo, cancellationToken);
                 MyConsole.WriteStep($"→ Checking out to '{taskBranch}'");
-                await gitTool.CheckoutAsync(taskBranch, cancellationToken);
-                MyConsole.WriteStep($"→ Updating '{taskBranch}' from {repo}");
-                await gitTool.GetMainChangesAsync(cancellationToken);
+                if (await gitTool.CheckoutAsync(taskBranch, cancellationToken))
+                {
+                    MyConsole.WriteStep($"→ Updating '{taskBranch}' from {repo}");
+                    await gitTool.GetMainChangesAsync(cancellationToken);
+                }
             }
 
             MyConsole.WriteSucess($"✅ Branches from task {taskBranch} were updated!.");

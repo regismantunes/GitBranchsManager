@@ -23,16 +23,17 @@ namespace Gbm.Commands.BranchesCommands
                 MyConsole.WriteHeader($"--- Processing repository: {repo} ---");
                 
                 MyConsole.WriteStep("→ Checking out 'develop' branch");
-                await gitTool.CheckoutAsync("develop", cancellationToken);
+                if (await gitTool.CheckoutAsync("develop", cancellationToken))
+                {
+                    MyConsole.WriteStep("→ Pulling latest changes from 'develop'");
+                    await gitTool.PullAsync(cancellationToken);
 
-                MyConsole.WriteStep("→ Pulling latest changes from 'develop'");
-                await gitTool.PullAsync(cancellationToken);
+                    MyConsole.WriteStep($"→ Merging branch '{taskBranch}'");
+                    await gitTool.PullOriginAsync(taskBranch, cancellationToken);
 
-                MyConsole.WriteStep($"→ Merging branch '{taskBranch}'");
-                await gitTool.PullOriginAsync(taskBranch, cancellationToken);
-
-                MyConsole.WriteStep("→ Pushing changes to remote 'develop' branch");
-                await gitTool.PushAsync(cancellationToken);
+                    MyConsole.WriteStep("→ Pushing changes to remote 'develop' branch");
+                    await gitTool.PushAsync(cancellationToken);
+                }
             }
 
             MyConsole.WriteSucess("✅ Changes were moved to develop successfully!");
