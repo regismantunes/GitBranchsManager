@@ -112,7 +112,7 @@ namespace Gbm.Services.Git
                 var result = await RunGitAndGetResultAsync($"checkout {branch}", cancellationToken);
                 if (result.ExitCode == 0)
                     return true;
-                if (result.Output.Contains($"error: pathspec '{branch}' did not match any file(s) known to git"))
+                if (result.Error.Contains($"error: pathspec '{branch}' did not match any file(s) known to git"))
                     return false;
                 MyConsole.WriteError($"❌ It was not possible to checkout to '{branch}' branch.");
                 MyConsole.WriteError("🛑 Please resolve the not commited files, then press ENTER to continue...");
@@ -325,12 +325,13 @@ namespace Gbm.Services.Git
                 if (!string.IsNullOrWhiteSpace(stderr)) MyConsole.WriteInfo(stderr.TrimEnd());
                 if (!string.IsNullOrWhiteSpace(stdout)) MyConsole.WriteInfo(stdout.TrimEnd());
             }
-            return new RunGitResult { ExitCode = exitCode, Output = stdout };
+            return new RunGitResult { ExitCode = exitCode, Output = stdout, Error = stderr };
         }
 
         private struct RunGitResult
         {
             public string Output { get; set; }
+            public string Error { get; set; }
             public int ExitCode { get; set; }
         }
     }
