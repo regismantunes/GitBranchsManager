@@ -7,10 +7,10 @@ namespace Gbm.Commands.BranchesCommands
     {
         [CommandAsyncWithArgsBuilderAsync<BranchesCommandArgsBuilder>("-u",
             Description = "Update task branches from base",
-            Example = "gbm -u <TaskId> [Repos...]",
+            Example = "gbm -u <TaskId> [--origin <TaskId>] [Repos...]",
             Group = CommandGroups.Branches,
             Order = 3)]
-        public async Task<int> ExecuteAsync(string taskBranch, string[] repositories, CancellationToken cancellationToken = default)
+        public async Task<int> ExecuteAsync(string taskBranch, string? branchOrigin, string[] repositories, CancellationToken cancellationToken = default)
         {
             gitTool.ShowGitOutput = true;
             MyConsole.WriteCommandHeader("🔄 Updating task branches from base...");
@@ -21,8 +21,16 @@ namespace Gbm.Commands.BranchesCommands
                 MyConsole.WriteStep($"→ Checking out to '{taskBranch}'");
                 if (await gitTool.CheckoutAsync(taskBranch, cancellationToken))
                 {
-                    MyConsole.WriteStep($"→ Updating '{taskBranch}' from {repo}");
-                    await gitTool.GetMainChangesAsync(cancellationToken);
+                    if (!string.IsNullOrEmpty(branchOrigin))
+                    {
+                        MyConsole.WriteStep($"→ Pulling changes from '{branchOrigin}' into '{taskBranch}'");
+                        await gitTool.PullOriginAsync(branchOrigin!, cancellationToken);
+                    }
+                    else
+                    {
+                        MyConsole.WriteStep($"→ Updating '{taskBranch}' from {repo}");
+                        await gitTool.GetMainChangesAsync(cancellationToken);
+                    }
                 }
             }
 

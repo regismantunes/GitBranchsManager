@@ -26,8 +26,22 @@ namespace Gbm.Commands.BranchesCommands
             if (string.IsNullOrWhiteSpace(branchName))
                 throw new ArgsValidationException($"Task with id '{taskId}' does not have a branch name defined. You need firt to inform task details. Exmaple: gbm -t TaskId");
 
+            var repositoriesIndex = 2;
+            string? branchOrigin = null;
+            if (command == "-u" && args.Length > 2)
+            {
+                var originCommand = args[2].ToLower();
+                if (originCommand == "--origin")
+                {
+                    var originTaskId = args.Length > 3 ? args[3] : throw new ArgsValidationException("Missing Origin TaskId. Example: gbm -u TaskId --origin OriginTaskId [Repo1 Repo2 ...]");
+                    var originBranchInfo = await taskInfoRepository.GetAsync(originTaskId, cancellationToken);
+                    branchOrigin = originBranchInfo == null ? originTaskId.ToLower() : originBranchInfo.BranchName;
+                    repositoriesIndex = 4;
+                }
+            }
+
             // Get repositories
-            var repositories = args.Length > 2 ? args[2..] : null;
+            var repositories = args.Length > repositoriesIndex ? args[repositoriesIndex..] : null;
 
             if (repositories is null)
             {
@@ -43,7 +57,8 @@ namespace Gbm.Commands.BranchesCommands
             return new Dictionary<string, object>
             {
                 { "TaskBranch",  branchName },
-                { "Repositories", repositories }
+                { "Repositories", repositories },
+                { "BranchOrigin", branchOrigin }
             };
         }
     }
