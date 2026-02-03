@@ -31,6 +31,7 @@ namespace Gbm.Commands.PullRequestCommands
                 MyConsole.WriteHeader($"--- Creating PRs ---");
                 foreach (var repo in repositories)
                 {
+                    MyConsole.WriteHeader($"--- Processing repository: {repo} ---");
                     if (await repository.ExistsAsync(taskId, repo, cancellationToken))
                         continue;
                     

@@ -16,6 +16,7 @@ namespace Gbm.Commands.BranchesCommands
             MyConsole.WriteCommandHeader("🔀 Checking out task branches...");
             foreach (var repo in repositories)
             {
+                MyConsole.WriteHeader($"--- Processing repository: {repo} ---");
                 await gitTool.SetRepositoryAsync(repo, cancellationToken);
                 MyConsole.WriteStep($"→ Setting local branch '{taskBranch}' from {repo}");
                 if (taskBranch == "main" || taskBranch == "master")
