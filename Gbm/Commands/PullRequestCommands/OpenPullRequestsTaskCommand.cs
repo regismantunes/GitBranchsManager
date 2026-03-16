@@ -54,9 +54,6 @@ namespace Gbm.Commands.PullRequestCommands
                     MyConsole.BackToPreviousLine();
                     MyConsole.WriteStep($"→ PR successful created in {repo}: {pr.Url}");
                     await repository.SaveAsync(pr, cancellationToken);
-
-                    gitTool.ShowGitOutput = false;
-                    await gitTool.CheckoutToMainAsync(cancellationToken);
                 }
 
                 // Generate related PRs text
