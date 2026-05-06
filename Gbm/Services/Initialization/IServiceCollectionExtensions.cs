@@ -1,5 +1,6 @@
 using Gbm.Persistence.Repositories;
 using Gbm.Persistence.Repositories.Interfaces;
+using Gbm.Services.Dotnet;
 using Gbm.Services.Git;
 using Gbm.Services.GitHub;
 using Gbm.Services.Jira;
@@ -21,6 +22,7 @@ namespace Gbm.Services.Initialization
                 .AddJiraClient()
                 .AddGitHubClient()
                 .AddGitTool()
+                .AddDotnetTool()
                 .AddPullRequestInfoRepository()
                 .AddTaskInfoRepository();
         }
@@ -82,6 +84,11 @@ namespace Gbm.Services.Initialization
                 var basePath = configuration.GetValueOrThrow(ConfigurationVariable.BasePath);
                 return new GitTool(basePath);
             });
+        }
+
+        public static IServiceCollection AddDotnetTool(this IServiceCollection services)
+        {
+            return services.AddSingleton<IDotnetTool, DotnetTool>();
         }
 
         public static IServiceCollection AddGitHubClient(this IServiceCollection services)

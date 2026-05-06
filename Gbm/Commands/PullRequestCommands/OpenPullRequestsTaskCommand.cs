@@ -1,4 +1,5 @@
 using Gbm.Persistence.Repositories.Interfaces;
+using Gbm.Services.Dotnet;
 using Gbm.Services.Git;
 using Gbm.Services.GitHub;
 using Gbm.Services.Jira;
@@ -6,7 +7,7 @@ using RA.Console.DependencyInjection.Attributes;
 
 namespace Gbm.Commands.PullRequestCommands
 {
-    public class OpenPullRequestsTaskCommand(IJiraClient jiraClient, IPullRequestInfoRepository repository, IGitHubClient gitHubClient, IGitTool gitTool)
+    public class OpenPullRequestsTaskCommand(IJiraClient jiraClient, IPullRequestInfoRepository repository, IGitHubClient gitHubClient, IGitTool gitTool, IDotnetTool dotnetTool)
     {
         [CommandAsyncWithArgsBuilderAsync<OpenPullRequestsTaskCommandArgsBuilder>("-pr",
             Description = "Create pull requests for task branches. It will push local changes unless you sent the 'nopush' option.",
@@ -28,24 +29,51 @@ namespace Gbm.Commands.PullRequestCommands
                 }
                 MyConsole.WriteStep($"→ Task summary: {taskInfo.Summary}");
 
+                // Phase 1: validate builds across all repositories
+                MyConsole.WriteHeader($"--- Validating builds ---");
+                gitTool.ShowGitOutput = false;
+                foreach (var repo in repositories)
+                {
+                    if (await repository.ExistsAsync(taskId, repo, cancellationToken))
+                        continue;
+
+                    await gitTool.SetRepositoryAsync(repo, cancellationToken);
+
+                    MyConsole.WriteStep($"→ Checking out '{taskInfo.BranchName}' in '{repo}'");
+                    if (!await gitTool.CheckoutAsync(taskInfo.BranchName, cancellationToken))
+                    {
+                        MyConsole.WriteError($"❌ Branch '{taskInfo.BranchName}' not found in '{repo}'. Aborting.");
+                        return 1;
+                    }
+
+                    MyConsole.WriteStep($"→ Building '{repo}'...");
+                    if (!await dotnetTool.BuildRepositoryAsync(gitTool.WorkingDirectory!, cancellationToken))
+                    {
+                        MyConsole.WriteError($"❌ Build failed in '{repo}'. Aborting — no PRs were opened.");
+                        return 1;
+                    }
+
+                    MyConsole.WriteStep($"→ '{repo}' build passed ✔");
+                }
+
+                // Phase 2: push and open PRs
                 MyConsole.WriteHeader($"--- Creating PRs ---");
                 foreach (var repo in repositories)
                 {
                     MyConsole.WriteHeader($"--- Processing repository: {repo} ---");
                     if (await repository.ExistsAsync(taskId, repo, cancellationToken))
                         continue;
-                    
+
                     await gitTool.SetRepositoryAsync(repo, cancellationToken);
                     gitTool.ShowGitOutput = true;
 
+                    MyConsole.WriteStep($"→ Checking out to '{taskInfo.BranchName}'");
+                    await gitTool.CheckoutAsync(taskInfo.BranchName, cancellationToken);
+
                     if (pushLocalChanges)
                     {
-                        MyConsole.WriteStep($"→ Checking out to '{taskInfo.BranchName}'");
-                        if (await gitTool.CheckoutAsync(taskInfo.BranchName, cancellationToken))
-                        {
-                            MyConsole.WriteStep($"→ Pushing '{taskInfo.BranchName}'");
-                            await gitTool.PushAsync(cancellationToken);
-                        }
+                        MyConsole.WriteStep($"→ Pushing '{taskInfo.BranchName}'");
+                        await gitTool.PushAsync(cancellationToken);
                     }
 
                     MyConsole.WriteStep($"→ Creating PR in {repo}...");
