@@ -1,8 +1,5 @@
-using System;
-using System.Linq;
 using Gbm.Persistence.Configuration;
 using Gbm.Services.Initialization;
-using Xunit;
 
 namespace Gbm.Unit.Tests.Services.Initialization;
 

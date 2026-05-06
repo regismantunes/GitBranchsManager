@@ -58,7 +58,7 @@ namespace Gbm.Services.Jira
             var jira = _userEmail != null ?
                 Atlassian.Jira.Jira.CreateRestClient(url, _userEmail, _userPassword) :
                 Atlassian.Jira.Jira.CreateOAuthRestClient(url, _consumerKey, _consumerSecret, _accessToken, _accessTokenSecret);
-
+            
             var issue = await jira.Issues.GetIssueAsync(taskId, cancellationToken);
 
             return new TaskInfo(taskId,

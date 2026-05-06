@@ -6,8 +6,6 @@ using Microsoft.Extensions.Configuration;
 using RA.Console.DependencyInjection;
 using RA.Console.DependencyInjection.Attributes;
 using System.Globalization;
-using System.Threading;
-using System.Threading.Tasks;
 using TextCopy;
 
 namespace Gbm.Commands.TaskInfoCommands

@@ -1,5 +1,3 @@
-using System.ComponentModel;
-
 namespace Gbm
 {
     public static class MyConsole
