@@ -1,7 +1,12 @@
 {
   "profiles": {
-    "Gbm": {
-      "commandName": "Project"
+    "gbm -t": {
+      "commandName": "Project",
+      "commandLineArgs": "-t SSM-2427"
+    },
+    "gbm -pr": {
+      "commandName": "Project",
+      "commandLineArgs": "-pr SSM-2427"
     }
   }
 }
