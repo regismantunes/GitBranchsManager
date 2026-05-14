@@ -8,35 +8,26 @@ namespace Gbm.Commands.BranchesCommands
     {
         [CommandAsyncWithArgsBuilderAsync<BranchesCommandArgsBuilder>("-push",
             Description = "Push task branches",
-            Example = "gbm -push <TaskId> [Repos...]",
+            Example = "gbm -push <TaskId> [nobuild] [Repos...]",
             Group = CommandGroups.Branches,
             Order = 4)]
-        public async Task<int> ExecuteAsync(string taskBranch, string[] repositories, CancellationToken cancellationToken = default)
+        public async Task<int> ExecuteAsync(string taskBranch, string[] repositories, bool noBuild = false, CancellationToken cancellationToken = default)
         {
             MyConsole.WriteCommandHeader("📤 Pushing task branches...");
 
             // Phase 1: validate builds across all repositories
-            MyConsole.WriteHeader($"--- Validating builds ---");
-            gitTool.ShowGitOutput = false;
-            foreach (var repo in repositories)
+            if (!noBuild)
             {
-                await gitTool.SetRepositoryAsync(repo, cancellationToken);
-
-                MyConsole.WriteStep($"→ Checking out '{taskBranch}' in '{repo}'");
-                if (!await gitTool.CheckoutAsync(taskBranch, cancellationToken))
+                MyConsole.WriteHeader($"--- Validating builds ---");
+                gitTool.ShowGitOutput = false;
+                foreach (var repo in repositories)
                 {
-                    MyConsole.WriteError($"❌ Branch '{taskBranch}' not found in '{repo}'. Aborting.");
-                    return 1;
+                    if (!await dotnetTool.BuildRepositoryAsync(repo, taskBranch, cancellationToken))
+                    {
+                        MyConsole.WriteError($"❌ Build failed in '{repo}'. Aborting — nothing was pushed.");
+                        return 1;
+                    }
                 }
-
-                MyConsole.WriteStep($"→ Building '{repo}'...");
-                if (!await dotnetTool.BuildRepositoryAsync(gitTool.WorkingDirectory!, cancellationToken))
-                {
-                    MyConsole.WriteError($"❌ Build failed in '{repo}'. Aborting — nothing was pushed.");
-                    return 1;
-                }
-
-                MyConsole.WriteStep($"→ '{repo}' build passed ✔");
             }
 
             // Phase 2: push all branches

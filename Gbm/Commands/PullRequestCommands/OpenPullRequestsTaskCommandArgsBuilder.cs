@@ -30,6 +30,11 @@ namespace Gbm.Commands.PullRequestCommands
                     parameters.Add("PushLocalChanges", false);
                     i++;
                 }
+                if (args.Length > i && args[i].Equals("nobuild", StringComparison.OrdinalIgnoreCase))
+                {
+                    parameters.Add("NoBuild", true);
+                    i++;
+                }
                 repositories = args.Length > i ? args[i..] : null;
             }
 

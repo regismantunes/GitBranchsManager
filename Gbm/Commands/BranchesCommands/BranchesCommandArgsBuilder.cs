@@ -28,6 +28,7 @@ namespace Gbm.Commands.BranchesCommands
 
             var repositoriesIndex = 2;
             string? branchOrigin = null;
+            bool noBuild = false;
             if (command == "-u" && args.Length > 2)
             {
                 var originCommand = args[2].ToLower();
@@ -38,6 +39,13 @@ namespace Gbm.Commands.BranchesCommands
                     branchOrigin = originBranchInfo == null ? originTaskId.ToLower() : originBranchInfo.BranchName;
                     repositoriesIndex = 4;
                 }
+            }
+
+            if (command == "-push" && args.Length > repositoriesIndex &&
+                args[repositoriesIndex].Equals("nobuild", StringComparison.OrdinalIgnoreCase))
+            {
+                noBuild = true;
+                repositoriesIndex++;
             }
 
             // Get repositories
@@ -58,7 +66,8 @@ namespace Gbm.Commands.BranchesCommands
             {
                 { "TaskBranch",  branchName },
                 { "Repositories", repositories },
-                { "BranchOrigin", branchOrigin }
+                { "BranchOrigin", branchOrigin },
+                { "NoBuild", noBuild }
             };
         }
     }

@@ -1,81 +1,105 @@
+using Gbm.Services.Git;
 using System.Diagnostics;
 
 namespace Gbm.Services.Dotnet
 {
-    public class DotnetTool : IDotnetTool
+    public class DotnetTool(IGitTool gitTool) : IDotnetTool
     {
-        public async Task<bool> BuildRepositoryAsync(string repositoryPath, CancellationToken cancellationToken = default)
+        public async Task<bool> BuildRepositoryAsync(string repo, string branchName, CancellationToken cancellationToken = default)
         {
-            if (!Directory.Exists(repositoryPath))
-                throw new DirectoryNotFoundException($"The directory '{repositoryPath}' does not exist.");
+            await gitTool.SetRepositoryAsync(repo, cancellationToken);
 
-            var solutions = Directory.GetFiles(repositoryPath, "*.sln", SearchOption.AllDirectories)
-                .Concat(Directory.GetFiles(repositoryPath, "*.slnx", SearchOption.AllDirectories))
-                .Where(IsSdkCompatibleSolution);
-            
+            MyConsole.WriteStep($"→ Checking out '{branchName}' in '{repo}'");
+            if (!await gitTool.CheckoutAsync(branchName, cancellationToken))
+            {
+                MyConsole.WriteError($"❌ Branch '{branchName}' not found in '{repo}'.");
+                return false;
+            }
+
+            MyConsole.WriteStep($"→ Building '{repo}'...");
+            return await BuildSolutionsFromDirectoryAsync(gitTool.WorkingDirectory!, cancellationToken);
+        }
+
+        private static async Task<bool> BuildSolutionsFromDirectoryAsync(string direcotryPath, CancellationToken cancellationToken = default)
+        {
+            if (!Directory.Exists(direcotryPath))
+                throw new DirectoryNotFoundException($"The directory '{direcotryPath}' does not exist.");
+
+            var solutions = Directory.GetFiles(direcotryPath, "*.sln", SearchOption.AllDirectories)
+                .Concat(Directory.GetFiles(direcotryPath, "*.slnx", SearchOption.AllDirectories))
+                .Where(sln => IsMSBuildCompatibleSolution(sln) && !HasSqlProjects(sln));
+
+            if (!solutions.Any())
+            {
+                MyConsole.WriteInfo("No dotnet-compatible solutions found.");
+                return true; // No solutions to build, consider it a success
+            }
+
             foreach (var solution in solutions)
             {
-                MyConsole.WriteInfo($"Solution: {solution}");
-                var result = await RunDotnetAsync(repositoryPath, $"build \"{solution}\"", cancellationToken);
+                var solutionName = Path.GetFileName(solution);
+                MyConsole.WriteInfo($"Building solution: {solutionName}");
+                var platformArg = HasX64Configuration(solution) ? " /p:Platform=x64" : string.Empty;
+                var result = await RunMSBuildAsync(direcotryPath, $"\"{solution}\" /t:Restore;Build /p:Configuration=Debug{platformArg}", cancellationToken);
                 if (result.ExitCode != 0)
                 {
-                    MyConsole.WriteError($"❌ Build failed for '{Path.GetFileName(solution)}':");
-                    if (!string.IsNullOrWhiteSpace(result.Output))
-                        MyConsole.WriteError(result.Output.TrimEnd());
+                    MyConsole.WriteError($"❌ Build failed for '{solutionName}':");
                     if (!string.IsNullOrWhiteSpace(result.Error))
                         MyConsole.WriteError(result.Error.TrimEnd());
                     return false;
                 }
             }
 
+            MyConsole.WriteStep($"→ All solutions built successfully ✔");
             return true;
+        }
+
+        /// <summary>
+        /// Returns true if the solution file format is compatible with MSBuild.
+        /// For .sln files, requires "Format Version 12.00" or higher (Visual Studio 2012+).
+        /// For .slnx files, always considered compatible.
+        /// </summary>
+        private static bool IsMSBuildCompatibleSolution(string slnPath)
+        {
+            if (Path.GetExtension(slnPath).Equals(".slnx", StringComparison.OrdinalIgnoreCase))
+                return true;
+            
+            const string SolutionFileHeader = "Microsoft Visual Studio Solution File, Format Version";
+
+            foreach (var line in File.ReadLines(slnPath).Take(5))
+            {
+                var trimmed = line.TrimStart();
+                if (!trimmed.StartsWith(SolutionFileHeader, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                var versionPart = trimmed[SolutionFileHeader.Length..].Trim();
+                return Version.TryParse(versionPart, out var version) && version >= new Version(12, 0);
+            }
+
+            return false;
+        }
+
+        private static bool HasX64Configuration(string slnPath)
+        {
+            var slnContent = File.ReadAllText(slnPath);
+            return slnContent.Contains("x64", StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>
         /// Returns true only if all projects in the solution are SDK-style (compatible with dotnet CLI).
         /// Skips solutions containing .sqlproj or old-style .csproj (ToolsVersion-based) projects.
         /// </summary>
-        private static bool IsSdkCompatibleSolution(string slnPath)
+        private static bool HasSqlProjects(string slnPath)
         {
-            var slnDir = Path.GetDirectoryName(slnPath)!;
             var slnContent = File.ReadAllText(slnPath);
-
-            // Skip solutions with SQL projects
-            if (slnContent.Contains(".sqlproj", StringComparison.OrdinalIgnoreCase))
-                return false;
-
-            // Extract relative project paths from the solution file
-            var projectPaths = System.Text.RegularExpressions.Regex
-                .Matches(slnContent, @"= "".+?"", ""(.+?\.csproj)""")
-                .Select(m => m.Groups[1].Value.Replace('\\', Path.DirectorySeparatorChar))
-                .Select(rel => Path.GetFullPath(Path.Combine(slnDir, rel)))
-                .Where(File.Exists)
-                .ToList();
-
-            // If we can't find any csproj projects, check for other project types — if any exist, skip this solution
-            if (projectPaths.Count == 0)
-            {
-                // If the solution references any project files at all, it's likely not SDK-compatible
-                return !System.Text.RegularExpressions.Regex.IsMatch(
-                    slnContent, @"""[^""]+\.[a-zA-Z]+proj""");
-            }
-
-            // Skip if any project is old-style (has ToolsVersion attribute, not SDK-style)
-            foreach (var proj in projectPaths)
-            {
-                var firstLine = File.ReadLines(proj).FirstOrDefault(l => l.TrimStart().StartsWith("<Project")) ?? string.Empty;
-                if (!firstLine.Contains("Sdk=", StringComparison.OrdinalIgnoreCase))
-                    return false;
-            }
-
-            return true;
+            return slnContent.Contains(".sqlproj", StringComparison.OrdinalIgnoreCase);
         }
 
-        private static async Task<RunDotnetResult> RunDotnetAsync(string workingDirectory, string arguments, CancellationToken cancellationToken)
+        private static async Task<RunDotnetResult> RunMSBuildAsync(string workingDirectory, string arguments, CancellationToken cancellationToken)
         {
             var psi = new ProcessStartInfo
             {
-                FileName = "dotnet",
+                FileName = "C:\\Program Files\\Microsoft Visual Studio\\18\\Insiders\\MSBuild\\Current\\Bin\\MSBuild.exe",
                 Arguments = arguments,
                 WorkingDirectory = workingDirectory,
                 RedirectStandardOutput = true,

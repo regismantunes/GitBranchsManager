@@ -7,6 +7,10 @@
     "gbm -pr": {
       "commandName": "Project",
       "commandLineArgs": "-pr SSM-2427"
+    },
+    "gbm -push": {
+      "commandName": "Project",
+      "commandLineArgs": "-push SSM-1886"
     }
   }
 }
