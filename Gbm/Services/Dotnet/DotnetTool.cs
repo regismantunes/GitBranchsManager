@@ -11,13 +11,11 @@ namespace Gbm.Services.Dotnet
 
             var solutions = Directory.GetFiles(repositoryPath, "*.sln", SearchOption.AllDirectories)
                 .Concat(Directory.GetFiles(repositoryPath, "*.slnx", SearchOption.AllDirectories))
-                .Where(IsSdkCompatibleSolution)
-                .ToArray();
-            if (solutions.Length == 0)
-                return true;
-
+                .Where(IsSdkCompatibleSolution);
+            
             foreach (var solution in solutions)
             {
+                MyConsole.WriteInfo($"Solution: {solution}");
                 var result = await RunDotnetAsync(repositoryPath, $"build \"{solution}\"", cancellationToken);
                 if (result.ExitCode != 0)
                 {
