@@ -11,6 +11,10 @@
     "gbm -push": {
       "commandName": "Project",
       "commandLineArgs": "-push SSM-1886"
+    },
+    "gbm -ti": {
+      "commandName": "Project",
+      "commandLineArgs": "-ti SSM-9998"
     }
   }
 }
