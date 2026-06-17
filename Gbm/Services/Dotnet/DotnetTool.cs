@@ -46,6 +46,8 @@ namespace Gbm.Services.Dotnet
                     MyConsole.WriteError($"❌ Build failed for '{solutionName}':");
                     if (!string.IsNullOrWhiteSpace(result.Error))
                         MyConsole.WriteError(result.Error.TrimEnd());
+                    else if (!string.IsNullOrWhiteSpace(result.Output))
+                        MyConsole.WriteError(result.Output.TrimEnd());
                     return false;
                 }
             }
