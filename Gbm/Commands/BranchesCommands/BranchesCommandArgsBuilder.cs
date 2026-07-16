@@ -4,7 +4,7 @@ using RA.Console.DependencyInjection.Args;
 
 namespace Gbm.Commands.BranchesCommands
 {
-    public class BranchesCommandArgsBuilder(ITaskInfoRepository taskInfoRepository, IGitTool gitTool) : IArgsBuilderAsync
+    public sealed class BranchesCommandArgsBuilder(ITaskInfoRepository taskInfoRepository, IGitTool gitTool) : IArgsBuilderAsync
     {
         public async Task<IDictionary<string, object>> BuildAsync(string[] args, CancellationToken cancellationToken = default)
         {

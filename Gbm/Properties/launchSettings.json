@@ -2,7 +2,7 @@
   "profiles": {
     "gbm -t": {
       "commandName": "Project",
-      "commandLineArgs": "-t SSM-2427"
+      "commandLineArgs": "-t SSM-1916 -summary \"GetFloorPlanQuantityTypeWithQuantities(int floorPlanQuantityTypeID)\" -description \"Migrate GetFloorPlanQuantityTypeWithQuantities  to PurchasingAPI\r\n\r\n- API + Unit/Integration Tests\r\n- Obsolete at \"Main\" project\r\n- SDK\r\n- API Management\r\n- API Automated Tests\" usedefaultbranch purchasingservice purchasingclientsdk main api-management"
     },
     "gbm -pr": {
       "commandName": "Project",

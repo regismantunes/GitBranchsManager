@@ -12,7 +12,7 @@ namespace Gbm.Commands.TaskInfoCommands
 {
     public class SaveTaskInfoCommand(ITaskInfoRepository repository, IGitTool gitTool, IConfiguration configuration)
     {
-        [CommandAsync("-t",
+        [CommandAsyncWithArgsBuilderAsync<SaveTaskInfoCommandArgsBuilder>("-t",
             Description = "Save task information",
             Example = "gbm -t <TaskId> [-summary <Task Summary>] [-description <Task Description>] [-branch <Task Branch>|usedefaultbranch] [norepo|Repos...]",
             Group = CommandGroups.Tasks,
