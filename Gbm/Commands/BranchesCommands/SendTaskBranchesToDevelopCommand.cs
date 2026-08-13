@@ -1,16 +1,17 @@
+using Gbm.Services.Dotnet;
 using Gbm.Services.Git;
 using RA.Console.DependencyInjection.Attributes;
 
 namespace Gbm.Commands.BranchesCommands
 {
-    public class SendTaskBranchesToDevelopCommand(IGitTool gitTool)
+    public class SendTaskBranchesToDevelopCommand(IGitTool gitTool, IDotnetTool dotnetTool)
     {
         [CommandAsyncWithArgsBuilderAsync<BranchesCommandArgsBuilder>("-d",
             Description = "Merge task into develop and push",
-            Example = "gbm -d <TaskId> [Repos...]",
+            Example = "gbm -d <TaskId> [nobuild] [Repos...]",
             Group = CommandGroups.Branches,
             Order = 5)]
-        public async Task<int> ExecuteAsync(string taskBranch, string[] repositories, CancellationToken cancellationToken = default)
+        public async Task<int> ExecuteAsync(string taskBranch, string[] repositories, bool noBuild = false, CancellationToken cancellationToken = default)
         {
             gitTool.ShowGitOutput = true;
             MyConsole.WriteCommandHeader("⬅️ Merging task branches into develop...");
@@ -30,6 +31,12 @@ namespace Gbm.Commands.BranchesCommands
 
                     MyConsole.WriteStep($"→ Merging branch '{taskBranch}'");
                     await gitTool.PullOriginAsync(taskBranch, cancellationToken);
+
+                    if (!noBuild)
+                    {
+                        MyConsole.WriteStep($"→ Building repository '{repo}'");
+                        await dotnetTool.BuildRepositoryAsync(repo, taskBranch, cancellationToken);
+                    }
 
                     MyConsole.WriteStep("→ Pushing changes to remote 'develop' branch");
                     await gitTool.PushAsync(cancellationToken);

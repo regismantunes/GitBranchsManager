@@ -40,7 +40,7 @@ namespace Gbm.Services.Dotnet
                 var solutionName = Path.GetFileName(solution);
                 MyConsole.WriteInfo($"Building solution: {solutionName}");
                 var platformArg = HasX64Configuration(solution) ? " /p:Platform=x64" : string.Empty;
-                var result = await RunMSBuildAsync(direcotryPath, $"\"{solution}\" /t:Restore;Build /p:Configuration=Debug{platformArg}", cancellationToken);
+                var result = await RunMSBuildAsync(direcotryPath, $"\"{solution}\" /t:Restore;Build /p:Configuration=Debug{platformArg} /p:NuGetInteractive=true", cancellationToken);
                 if (result.ExitCode != 0)
                 {
                     MyConsole.WriteError($"❌ Build failed for '{solutionName}':");

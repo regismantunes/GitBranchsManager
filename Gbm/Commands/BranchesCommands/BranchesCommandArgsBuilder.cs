@@ -41,7 +41,7 @@ namespace Gbm.Commands.BranchesCommands
                 }
             }
 
-            if (command == "-push" && args.Length > repositoriesIndex &&
+            if ((command is "-push" or "-d") && args.Length > repositoriesIndex &&
                 args[repositoriesIndex].Equals("nobuild", StringComparison.OrdinalIgnoreCase))
             {
                 noBuild = true;
