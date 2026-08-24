@@ -1,6 +1,5 @@
 using Gbm.Persistence.Repositories;
 using Gbm.Persistence.Repositories.Interfaces;
-using Gbm.Services.Dotnet;
 using Gbm.Services.Git;
 using Gbm.Services.GitHub;
 using Gbm.Services.Jira;
@@ -8,6 +7,7 @@ using Gbm.Services.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Gbm.Persistence.Configuration;
+using Gbm.Services.Build;
 
 namespace Gbm.Services.Initialization
 {
@@ -88,7 +88,7 @@ namespace Gbm.Services.Initialization
 
         public static IServiceCollection AddDotnetTool(this IServiceCollection services)
         {
-            return services.AddSingleton<IDotnetTool, DotnetTool>();
+            return services.AddSingleton<IBuildTool, BuildTool>();
         }
 
         public static IServiceCollection AddGitHubClient(this IServiceCollection services)

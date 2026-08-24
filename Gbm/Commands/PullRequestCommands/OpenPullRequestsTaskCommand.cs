@@ -1,5 +1,5 @@
 using Gbm.Persistence.Repositories.Interfaces;
-using Gbm.Services.Dotnet;
+using Gbm.Services.Build;
 using Gbm.Services.Git;
 using Gbm.Services.GitHub;
 using Gbm.Services.Jira;
@@ -7,7 +7,7 @@ using RA.Console.DependencyInjection.Attributes;
 
 namespace Gbm.Commands.PullRequestCommands
 {
-    public class OpenPullRequestsTaskCommand(IJiraClient jiraClient, IPullRequestInfoRepository repository, IGitHubClient gitHubClient, IGitTool gitTool, IDotnetTool dotnetTool)
+    public class OpenPullRequestsTaskCommand(IJiraClient jiraClient, IPullRequestInfoRepository repository, IGitHubClient gitHubClient, IGitTool gitTool, IBuildTool dotnetTool)
     {
         [CommandAsyncWithArgsBuilderAsync<OpenPullRequestsTaskCommandArgsBuilder>("-pr",
             Description = "Create pull requests for task branches. It will push local changes unless you sent the 'nopush' option.",

@@ -1,10 +1,10 @@
-using Gbm.Services.Dotnet;
+using Gbm.Services.Build;
 using Gbm.Services.Git;
 using RA.Console.DependencyInjection.Attributes;
 
 namespace Gbm.Commands.BranchesCommands
 {
-    public class SendTaskBranchesToDevelopCommand(IGitTool gitTool, IDotnetTool dotnetTool)
+    public class SendTaskBranchesToDevelopCommand(IGitTool gitTool, IBuildTool dotnetTool)
     {
         [CommandAsyncWithArgsBuilderAsync<BranchesCommandArgsBuilder>("-d",
             Description = "Merge task into develop and push",

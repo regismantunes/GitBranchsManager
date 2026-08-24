@@ -1,9 +1,9 @@
-using Gbm.Services.Dotnet;
+using Gbm.Services.Build;
 using RA.Console.DependencyInjection.Attributes;
 
 namespace Gbm.Commands.BranchesCommands
 {
-    public class BuildTaskBranchesCommand(IDotnetTool dotnetTool)
+    public class BuildTaskBranchesCommand(IBuildTool dotnetTool)
     {
         [CommandAsyncWithArgsBuilderAsync<BranchesCommandArgsBuilder>("-build",
             Description = "Validate build of task branches",

@@ -1,9 +1,9 @@
 using Gbm.Services.Git;
 using System.Diagnostics;
 
-namespace Gbm.Services.Dotnet
+namespace Gbm.Services.Build
 {
-    public class DotnetTool(IGitTool gitTool) : IDotnetTool
+    public class BuildTool(IGitTool gitTool) : IBuildTool
     {
         public async Task<bool> BuildRepositoryAsync(string repo, string branchName, CancellationToken cancellationToken = default)
         {
@@ -17,42 +17,83 @@ namespace Gbm.Services.Dotnet
             }
 
             MyConsole.WriteStep($"→ Building '{repo}'...");
-            return await BuildSolutionsFromDirectoryAsync(gitTool.WorkingDirectory!, cancellationToken);
+            return await BuildFilesFromDirectoryAsync(gitTool.WorkingDirectory!, cancellationToken);
         }
 
-        private static async Task<bool> BuildSolutionsFromDirectoryAsync(string direcotryPath, CancellationToken cancellationToken = default)
+        private static async Task<bool> BuildFilesFromDirectoryAsync(string direcotryPath, CancellationToken cancellationToken = default)
         {
             if (!Directory.Exists(direcotryPath))
                 throw new DirectoryNotFoundException($"The directory '{direcotryPath}' does not exist.");
 
             var solutions = Directory.GetFiles(direcotryPath, "*.sln", SearchOption.AllDirectories)
                 .Concat(Directory.GetFiles(direcotryPath, "*.slnx", SearchOption.AllDirectories))
-                .Where(sln => IsMSBuildCompatibleSolution(sln) && !HasSqlProjects(sln));
+                .Distinct()
+                .Where(sln =>
+                { 
+                    var fileInfo = new FileInfo(sln);
+                    if (fileInfo.Directory!.Name.Equals("archived", StringComparison.InvariantCultureIgnoreCase))
+                        return false;
+                    return IsMSBuildCompatibleSolution(sln) && !HasSqlProjects(sln); 
+                });
 
-            if (!solutions.Any())
+            var hasBuilded = false;
+            if (solutions.Contains("CombinedProjects.slnx"))
             {
-                MyConsole.WriteInfo("No dotnet-compatible solutions found.");
-                return true; // No solutions to build, consider it a success
-            }
-
-            foreach (var solution in solutions)
-            {
-                var solutionName = Path.GetFileName(solution);
-                MyConsole.WriteInfo($"Building solution: {solutionName}");
-                var platformArg = HasX64Configuration(solution) ? " /p:Platform=x64" : string.Empty;
-                var result = await RunMSBuildAsync(direcotryPath, $"\"{solution}\" /t:Restore;Build /p:Configuration=Debug{platformArg} /p:NuGetInteractive=true", cancellationToken);
-                if (result.ExitCode != 0)
-                {
-                    MyConsole.WriteError($"❌ Build failed for '{solutionName}':");
-                    if (!string.IsNullOrWhiteSpace(result.Error))
-                        MyConsole.WriteError(result.Error.TrimEnd());
-                    else if (!string.IsNullOrWhiteSpace(result.Output))
-                        MyConsole.WriteError(result.Output.TrimEnd());
+                hasBuilded = true;
+                if (!await TryToBuildFileAsync(direcotryPath, "CombinedProjects.slnx", false, cancellationToken))
                     return false;
+            }
+            else
+            {
+                foreach (var solution in solutions)
+                {
+                    hasBuilded = true;
+                    if (!await TryToBuildFileAsync(direcotryPath, solution, false, cancellationToken))
+                        return false;
                 }
             }
 
-            MyConsole.WriteStep($"→ All solutions built successfully ✔");
+            var bicepFiles = Directory.GetFiles(direcotryPath, "*.bicep", SearchOption.TopDirectoryOnly);
+            foreach (var bicepFile in bicepFiles)
+            {
+                hasBuilded = true;
+                if (!await TryToBuildFileAsync(direcotryPath, bicepFile, true, cancellationToken))
+                    return false;
+            }
+
+            if (!hasBuilded)
+            {
+                MyConsole.WriteInfo("No files found to build.");
+                return true; // No solutions to build, consider it a success
+            }
+
+            MyConsole.WriteStep($"→ All files built successfully ✔");
+            return true;
+        }
+
+        private static async Task<bool> TryToBuildFileAsync(string directoryPath, string file, bool buildWithAz, CancellationToken cancellationToken)
+        {
+            var fileName = Path.GetFileName(file);
+            MyConsole.WriteInfo($"Building file: {fileName}");
+            RunDotnetResult result;
+            if (buildWithAz)
+            {
+                result = await RunAzAsync(directoryPath, $"bicep build \"{file}\"", cancellationToken);
+            }
+            else
+            {
+                var platformArg = HasX64Configuration(file) ? " /p:Platform=x64" : string.Empty;
+                result = await RunMSBuildAsync(directoryPath, $"\"{file}\" /t:Restore;Build /p:Configuration=Debug{platformArg} /p:NuGetInteractive=true", cancellationToken);
+            }
+            if (result.ExitCode != 0)
+            {
+                MyConsole.WriteError($"❌ Build failed for '{fileName}':");
+                if (!string.IsNullOrWhiteSpace(result.Error))
+                    MyConsole.WriteError(result.Error.TrimEnd());
+                else if (!string.IsNullOrWhiteSpace(result.Output))
+                    MyConsole.WriteError(result.Output.TrimEnd());
+                return false;
+            }
             return true;
         }
 
@@ -97,11 +138,17 @@ namespace Gbm.Services.Dotnet
             return slnContent.Contains(".sqlproj", StringComparison.OrdinalIgnoreCase);
         }
 
-        private static async Task<RunDotnetResult> RunMSBuildAsync(string workingDirectory, string arguments, CancellationToken cancellationToken)
+        private static Task<RunDotnetResult> RunAzAsync(string workingDirectory, string arguments, CancellationToken cancellationToken)
+            => RunBuildAsync("az", workingDirectory, arguments, cancellationToken);
+        
+        private static Task<RunDotnetResult> RunMSBuildAsync(string workingDirectory, string arguments, CancellationToken cancellationToken) 
+            => RunBuildAsync("C:\\Program Files\\Microsoft Visual Studio\\18\\Insiders\\MSBuild\\Current\\Bin\\MSBuild.exe", workingDirectory, arguments, cancellationToken);
+
+        private static async Task<RunDotnetResult> RunBuildAsync(string command, string workingDirectory, string arguments, CancellationToken cancellationToken)
         {
             var psi = new ProcessStartInfo
             {
-                FileName = "C:\\Program Files\\Microsoft Visual Studio\\18\\Insiders\\MSBuild\\Current\\Bin\\MSBuild.exe",
+                FileName = command,
                 Arguments = arguments,
                 WorkingDirectory = workingDirectory,
                 RedirectStandardOutput = true,
@@ -109,7 +156,6 @@ namespace Gbm.Services.Dotnet
                 UseShellExecute = false,
                 CreateNoWindow = true
             };
-
             using var process = new Process { StartInfo = psi };
             process.Start();
             var stdout = await process.StandardOutput.ReadToEndAsync(cancellationToken);

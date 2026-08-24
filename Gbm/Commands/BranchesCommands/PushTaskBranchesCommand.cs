@@ -1,10 +1,10 @@
-using Gbm.Services.Dotnet;
+using Gbm.Services.Build;
 using Gbm.Services.Git;
 using RA.Console.DependencyInjection.Attributes;
 
 namespace Gbm.Commands.BranchesCommands
 {
-    public class PushTaskBranchesCommand(IGitTool gitTool, IDotnetTool dotnetTool)
+    public class PushTaskBranchesCommand(IGitTool gitTool, IBuildTool dotnetTool)
     {
         [CommandAsyncWithArgsBuilderAsync<BranchesCommandArgsBuilder>("-push",
             Description = "Push task branches",
