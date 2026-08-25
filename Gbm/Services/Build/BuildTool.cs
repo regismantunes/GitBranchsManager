@@ -37,10 +37,11 @@ namespace Gbm.Services.Build
                 });
 
             var hasBuilded = false;
-            if (solutions.Contains("CombinedProjects.slnx"))
+            var combinedProjectsSolution = solutions.FirstOrDefault(x => x.EndsWith("CombinedProjects.slnx", StringComparison.OrdinalIgnoreCase));
+            if (!string.IsNullOrEmpty(combinedProjectsSolution))
             {
                 hasBuilded = true;
-                if (!await TryToBuildFileAsync(direcotryPath, "CombinedProjects.slnx", false, cancellationToken))
+                if (!await TryToBuildFileAsync(direcotryPath, combinedProjectsSolution, false, cancellationToken))
                     return false;
             }
             else
@@ -78,7 +79,7 @@ namespace Gbm.Services.Build
             RunDotnetResult result;
             if (buildWithAz)
             {
-                result = await RunAzAsync(directoryPath, $"bicep build \"{file}\"", cancellationToken);
+                result = await RunAzAsync(directoryPath, $"bicep build --file \"{file}\"", cancellationToken);
             }
             else
             {
@@ -139,7 +140,7 @@ namespace Gbm.Services.Build
         }
 
         private static Task<RunDotnetResult> RunAzAsync(string workingDirectory, string arguments, CancellationToken cancellationToken)
-            => RunBuildAsync("az", workingDirectory, arguments, cancellationToken);
+            => RunBuildAsync(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "cmd.exe"), workingDirectory, string.Concat("/c az ", arguments), cancellationToken);
         
         private static Task<RunDotnetResult> RunMSBuildAsync(string workingDirectory, string arguments, CancellationToken cancellationToken) 
             => RunBuildAsync("C:\\Program Files\\Microsoft Visual Studio\\18\\Insiders\\MSBuild\\Current\\Bin\\MSBuild.exe", workingDirectory, arguments, cancellationToken);
