@@ -19,6 +19,7 @@
         Task PullAsync(CancellationToken cancellationToken = default);
         Task PullOriginAsync(string branchFrom, CancellationToken cancellationToken = default);
         Task PushAsync(CancellationToken cancellationToken = default);
+        Task RestoreTrackedChangesAsync(CancellationToken cancellationToken = default);
         Task SetRepositoryAsync(string repository, CancellationToken cancellationToken = default);
         Task<IEnumerable<string>> GetRepositoriesWithBranchAsync(string branch, CancellationToken cancellationToken = default);
         IAsyncEnumerable<string> GetAllRepositoriesAsync(CancellationToken cancellationToken = default);

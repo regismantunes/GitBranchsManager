@@ -161,6 +161,11 @@ namespace Gbm.Services.Git
             await RunGitAsync("pull", cancellationToken);
         }
 
+        public async Task RestoreTrackedChangesAsync(CancellationToken cancellationToken = default)
+        {
+            await RunGitAsync("restore --worktree -- .", cancellationToken);
+        }
+
         public async Task CheckoutNewBranchAsync(string branch, CancellationToken cancellationToken = default)
         {
             await RunGitAsync($"checkout -b {branch}", cancellationToken);
@@ -295,7 +300,7 @@ namespace Gbm.Services.Git
         {
             if (string.IsNullOrEmpty(workingDirectory))
                 throw new ArgumentNullException(nameof(workingDirectory), argumentNullExceptionMessage);
-            
+
             if (!Directory.Exists(workingDirectory))
                 throw new DirectoryNotFoundException($"The directory '{workingDirectory}' does not exist.");
         }

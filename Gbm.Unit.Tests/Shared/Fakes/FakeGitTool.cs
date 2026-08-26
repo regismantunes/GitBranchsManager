@@ -26,10 +26,11 @@ public class FakeGitTool : IGitTool
     public Task<string> GetMainBranchAsync(CancellationToken cancellationToken = default) => Task.FromResult("main");
     public Task GetMainChangesAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
     public Task<bool> HasUncommittedChangesAsync(CancellationToken cancellationToken = default) => Task.FromResult(false);
-    public Task PullAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
-    public Task PullOriginAsync(string branchFrom, CancellationToken cancellationToken = default) => Task.CompletedTask;
-    public Task PushAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
-    public Task SetRepositoryAsync(string repository, CancellationToken cancellationToken = default) => Task.CompletedTask;
+	public Task PullAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+	public Task PullOriginAsync(string branchFrom, CancellationToken cancellationToken = default) => Task.CompletedTask;
+	public Task PushAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+	public Task RestoreTrackedChangesAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+	public Task SetRepositoryAsync(string repository, CancellationToken cancellationToken = default) => Task.CompletedTask;
     public Task<IEnumerable<string>> GetRepositoriesWithBranchAsync(string branch, CancellationToken cancellationToken = default)
     {
         _reposByBranch.TryGetValue(branch, out var repos);

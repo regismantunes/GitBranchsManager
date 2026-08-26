@@ -14,11 +14,19 @@ namespace Gbm.Services.Build
             {
                 MyConsole.WriteError($"❌ Branch '{branchName}' not found in '{repo}'.");
                 return false;
-            }
+		    }
 
-            MyConsole.WriteStep($"→ Building '{repo}'...");
-            return await BuildFilesFromDirectoryAsync(gitTool.WorkingDirectory!, cancellationToken);
-        }
+		    MyConsole.WriteStep($"→ Building '{repo}'...");
+		    try
+		    {
+			    return await BuildFilesFromDirectoryAsync(gitTool.WorkingDirectory!, cancellationToken);
+		    }
+		    finally
+		    {
+			    MyConsole.WriteStep($"→ Restoring tracked changes in '{repo}'...");
+			    await gitTool.RestoreTrackedChangesAsync(CancellationToken.None);
+		    }
+	    }
 
         private static async Task<bool> BuildFilesFromDirectoryAsync(string direcotryPath, CancellationToken cancellationToken = default)
         {
