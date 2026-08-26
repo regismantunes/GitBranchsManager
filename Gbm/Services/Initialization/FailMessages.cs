@@ -15,7 +15,9 @@ namespace Gbm.Services.Initialization
             { ConfigurationVariable.JiraConsumerKey, MissingJiraConsumerKeyMessage },
             { ConfigurationVariable.JiraConsumerSecret, MissingJiraConsumerSecretyMessage },
             { ConfigurationVariable.JiraAccessToken, MissingJiraAccessTokenMessage },
-            { ConfigurationVariable.JiraTokenSecrety, MissingJiraTokenSecretyMessage }
+            { ConfigurationVariable.JiraTokenSecrety, MissingJiraTokenSecretyMessage },
+            { ConfigurationVariable.BranchDefaultNameFormat, MissingBranchDefaultNameFormatMessage },
+            { ConfigurationVariable.ListRepositoriesAfterTaskCreation, MissingListRepositoriesAfterTaskCreationMessage }
         };
 
         public const string MissingBasePathMessage = """
@@ -50,6 +52,14 @@ namespace Gbm.Services.Initialization
 			❌ Jira Token Secrety is not set.
 			Use the command: gbm -jt <JiraTokenSecrety>
 			""";
+        public const string MissingBranchDefaultNameFormatMessage = """
+            ❌ Branch default name format is not set.
+            Use command: gbm -bn <BranchDefaultNameFormat>
+            """;
+        public const string MissingListRepositoriesAfterTaskCreationMessage = """
+            ❌ List repositories after task creation is not set.
+            Use command: gbm -tlr <true|false>
+            """;
         public const string MissingJiraUserMailMessage = """
 			❌ Jira User Mail is not set.
 			Use the command: gbm -ju <UserMail>
