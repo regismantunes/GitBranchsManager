@@ -39,7 +39,7 @@ namespace Gbm.Commands.PullRequestCommands
                         if (await repository.ExistsAsync(taskId, repo, cancellationToken))
                             continue;
 
-                        if (!await dotnetTool.BuildRepositoryAsync(repo, taskInfo.BranchName, cancellationToken))
+                        if (!await dotnetTool.BuildBranchAsync(repo, taskInfo.BranchName, cancellationToken))
                         {
                             MyConsole.WriteError($"❌ Build failed in '{repo}'. Aborting — no PRs were opened.");
                             return 1;

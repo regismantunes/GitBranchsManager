@@ -35,7 +35,7 @@ namespace Gbm.Commands.BranchesCommands
                     if (!noBuild)
                     {
                         MyConsole.WriteStep($"→ Building repository '{repo}'");
-                        await dotnetTool.BuildRepositoryAsync(repo, taskBranch, cancellationToken);
+                        await dotnetTool.BuildRepositoryAsync(repo, cancellationToken);
                     }
 
                     MyConsole.WriteStep("→ Pushing changes to remote 'develop' branch");

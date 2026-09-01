@@ -22,7 +22,7 @@ namespace Gbm.Commands.BranchesCommands
                 gitTool.ShowGitOutput = false;
                 foreach (var repo in repositories)
                 {
-                    if (!await dotnetTool.BuildRepositoryAsync(repo, taskBranch, cancellationToken))
+                    if (!await dotnetTool.BuildBranchAsync(repo, taskBranch, cancellationToken))
                     {
                         MyConsole.WriteError($"❌ Build failed in '{repo}'. Aborting — nothing was pushed.");
                         return 1;

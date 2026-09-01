@@ -16,7 +16,7 @@ namespace Gbm.Commands.BranchesCommands
 
             foreach (var repo in repositories)
             {
-                if (!await dotnetTool.BuildRepositoryAsync(repo, taskBranch, cancellationToken))
+                if (!await dotnetTool.BuildBranchAsync(repo, taskBranch, cancellationToken))
                 {
                     MyConsole.WriteError($"❌ Build failed in '{repo}'.");
                     return 1;

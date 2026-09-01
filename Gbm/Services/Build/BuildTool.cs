@@ -5,7 +5,7 @@ namespace Gbm.Services.Build
 {
     public class BuildTool(IGitTool gitTool) : IBuildTool
     {
-        public async Task<bool> BuildRepositoryAsync(string repo, string branchName, CancellationToken cancellationToken = default)
+        public async Task<bool> BuildBranchAsync(string repo, string branchName, CancellationToken cancellationToken = default)
         {
             await gitTool.SetRepositoryAsync(repo, cancellationToken);
 
@@ -16,17 +16,22 @@ namespace Gbm.Services.Build
                 return false;
 		    }
 
-		    MyConsole.WriteStep($"→ Building '{repo}'...");
-		    try
-		    {
-			    return await BuildFilesFromDirectoryAsync(gitTool.WorkingDirectory!, cancellationToken);
-		    }
-		    finally
-		    {
-			    MyConsole.WriteStep($"→ Restoring tracked changes in '{repo}'...");
-			    await gitTool.RestoreTrackedChangesAsync(CancellationToken.None);
-		    }
+            return await BuildRepositoryAsync(repo, cancellationToken);
 	    }
+
+        public async Task<bool> BuildRepositoryAsync(string repo, CancellationToken cancellationToken = default)
+        {
+            MyConsole.WriteStep($"→ Building '{repo}'...");
+            try
+            {
+                return await BuildFilesFromDirectoryAsync(gitTool.WorkingDirectory!, cancellationToken);
+            }
+            finally
+            {
+                MyConsole.WriteStep($"→ Restoring tracked changes in '{repo}'...");
+                await gitTool.RestoreTrackedChangesAsync(cancellationToken);
+            }
+        }
 
         private static async Task<bool> BuildFilesFromDirectoryAsync(string direcotryPath, CancellationToken cancellationToken = default)
         {
