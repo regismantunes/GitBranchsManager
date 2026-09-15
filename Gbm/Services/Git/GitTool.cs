@@ -156,19 +156,20 @@ namespace Gbm.Services.Git
             }
         }
 
-        public async Task PullAsync(CancellationToken cancellationToken = default)
+        public Task PullAsync(CancellationToken cancellationToken = default)
         {
-            await RunGitAsync("pull", cancellationToken);
+            return RunGitAsync("pull", cancellationToken);
         }
 
         public async Task RestoreTrackedChangesAsync(CancellationToken cancellationToken = default)
         {
             await RunGitAsync("restore --worktree -- .", cancellationToken);
+            await RunGitAsync("clean -f", cancellationToken);
         }
 
-        public async Task CheckoutNewBranchAsync(string branch, CancellationToken cancellationToken = default)
+        public Task CheckoutNewBranchAsync(string branch, CancellationToken cancellationToken = default)
         {
-            await RunGitAsync($"checkout -b {branch}", cancellationToken);
+            return RunGitAsync($"checkout -b {branch}", cancellationToken);
         }
 
         public async Task PushAsync(CancellationToken cancellationToken = default)
