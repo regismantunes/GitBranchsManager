@@ -56,7 +56,7 @@ namespace Gbm.Commands.BranchesCommands
                 if (branchName == "main" || branchName == "master")
                     repositories = await gitTool.GetAllRepositoriesAsync(cancellationToken).ToArrayAsync(cancellationToken);
                 else
-                    repositories = [.. await gitTool.GetRepositoriesWithBranchAsync(branchName, cancellationToken)];
+                    repositories = [.. await gitTool.GetRepositoriesWithBranchAsync(branchName, cancellationToken, includeRemote: command == "-s")];
 
                 if (repositories.Length == 0)
                     throw new ArgsValidationException($"No repositories found with branch '{branchName}'.");

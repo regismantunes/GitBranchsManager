@@ -22,7 +22,7 @@
         Task PushAsync(CancellationToken cancellationToken = default);
         Task RestoreTrackedChangesAsync(CancellationToken cancellationToken = default);
         Task SetRepositoryAsync(string repository, CancellationToken cancellationToken = default);
-        Task<IEnumerable<string>> GetRepositoriesWithBranchAsync(string branch, CancellationToken cancellationToken = default);
+        Task<IEnumerable<string>> GetRepositoriesWithBranchAsync(string branch, CancellationToken cancellationToken = default, bool includeRemote = false);
         IAsyncEnumerable<string> GetAllRepositoriesAsync(CancellationToken cancellationToken = default);
     }
 }

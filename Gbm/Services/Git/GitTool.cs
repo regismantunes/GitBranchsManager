@@ -243,7 +243,7 @@ namespace Gbm.Services.Git
             }
         }
 
-        public async Task<IEnumerable<string>> GetRepositoriesWithBranchAsync(string branch, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<string>> GetRepositoriesWithBranchAsync(string branch, CancellationToken cancellationToken = default, bool includeRemote = false)
         {
             var previousWorkingDirectory = WorkingDirectory;
             try
@@ -265,7 +265,8 @@ namespace Gbm.Services.Git
                     if (string.IsNullOrWhiteSpace(repositoryName)) continue;
 
                     await SetRepositoryAsync(repositoryName, validate: false, cancellationToken);
-                    if (await BranchExistsAsync(branch, cancellationToken))
+                    if (await BranchExistsAsync(branch, cancellationToken) ||
+                        (includeRemote && await BranchExistsRemotelyAsync(branch, cancellationToken)))
                         repositoriesWithBranch.Add(repositoryName);
                 }
                 MyConsole.FinishProgressBar();

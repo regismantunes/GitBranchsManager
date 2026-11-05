@@ -32,7 +32,7 @@ public Task CheckoutRemoteBranchAsync(string branch, CancellationToken cancellat
 	public Task PushAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
 	public Task RestoreTrackedChangesAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
 	public Task SetRepositoryAsync(string repository, CancellationToken cancellationToken = default) => Task.CompletedTask;
-    public Task<IEnumerable<string>> GetRepositoriesWithBranchAsync(string branch, CancellationToken cancellationToken = default)
+    public Task<IEnumerable<string>> GetRepositoriesWithBranchAsync(string branch, CancellationToken cancellationToken = default, bool includeRemote = false)
     {
         _reposByBranch.TryGetValue(branch, out var repos);
         return Task.FromResult<IEnumerable<string>>(repos ?? []);
