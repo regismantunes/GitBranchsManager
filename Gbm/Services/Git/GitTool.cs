@@ -245,37 +245,38 @@ namespace Gbm.Services.Git
 
         public async Task<IEnumerable<string>> GetRepositoriesWithBranchAsync(string branch, CancellationToken cancellationToken = default, bool includeRemote = false)
         {
-            var previousWorkingDirectory = WorkingDirectory;
-            try
+            MyConsole.WriteStep($"🔎 Searching for repositories with branch {branch}...");
+            var directories = Directory.GetDirectories(BasePath);
+            var count = 0;
+            decimal total = directories.Length;
+            const int progressBarWidth = 75;
+            MyConsole.StartProgressBar(progressBarWidth);
+            var results = await Task.WhenAll(directories.Select(async directory =>
             {
-                MyConsole.WriteStep($"🔎 Searching for repositories with branch {branch}...");
-                var repositoriesWithBranch = new List<string>();
-                var directories = Directory.GetDirectories(BasePath);
-
-                var count = 0m;
-                decimal total = directories.Length;
-                const int progressBarWidth = 75;
-                MyConsole.StartProgressBar(progressBarWidth);
-                foreach (var directory in directories)
+                try
                 {
-                    count++;
-                    MyConsole.UpdateProgressBar(count / total);
-
+                    cancellationToken.ThrowIfCancellationRequested();
                     var repositoryName = Path.GetFileName(directory);
-                    if (string.IsNullOrWhiteSpace(repositoryName)) continue;
+                    if (string.IsNullOrWhiteSpace(repositoryName)) return (Name: repositoryName, Found: false);
 
-                    await SetRepositoryAsync(repositoryName, validate: false, cancellationToken);
-                    if (await BranchExistsAsync(branch, cancellationToken) ||
-                        (includeRemote && await BranchExistsRemotelyAsync(branch, cancellationToken)))
-                        repositoriesWithBranch.Add(repositoryName);
+                    var localBranch = await RunGitAndGetResultAsync(directory, $"branch --list {branch}", cancellationToken, showOutput: false);
+                    if (localBranch.ExitCode == 0 && !string.IsNullOrWhiteSpace(localBranch.Output))
+                        return (Name: repositoryName, Found: true);
+
+                    if (!includeRemote) return (Name: repositoryName, Found: false);
+                    var remoteBranch = await RunGitAndGetResultAsync(directory, $"ls-remote --heads origin {branch}", cancellationToken, showOutput: false);
+                    return (Name: repositoryName, Found: remoteBranch.ExitCode == 0 && !string.IsNullOrWhiteSpace(remoteBranch.Output));
                 }
-                MyConsole.FinishProgressBar();
-                return repositoriesWithBranch;
-            }
-            finally
-            {
-                WorkingDirectory = previousWorkingDirectory;
-            }
+                finally
+                {
+                    Interlocked.Increment(ref count);
+                    MyConsole.UpdateProgressBar(count / total);
+                }
+            }));
+
+            MyConsole.FinishProgressBar();
+
+            return results.Where(result => result.Found).Select(result => result.Name);
         }
 
         private Task<RunGitResult> RunGitAndGetResultAsync(string arguments, CancellationToken cancellationToken = default)
@@ -318,7 +319,7 @@ namespace Gbm.Services.Git
                 throw new DirectoryNotFoundException($"The directory '{workingDirectory}' does not exist.");
         }
 
-        private async Task<RunGitResult> RunGitAndGetResultAsync(string workingDirectory, string arguments, CancellationToken cancellationToken = default)
+        private async Task<RunGitResult> RunGitAndGetResultAsync(string workingDirectory, string arguments, CancellationToken cancellationToken = default, bool? showOutput = null)
         {
             var psi = new ProcessStartInfo
             {
@@ -337,7 +338,7 @@ namespace Gbm.Services.Git
             var stderr = process.StandardError.ReadToEnd();
             await process.WaitForExitAsync(cancellationToken);
             var exitCode = process.ExitCode;
-            if (ShowGitOutput)
+            if (showOutput ?? ShowGitOutput)
             {
                 if (!string.IsNullOrWhiteSpace(stderr)) MyConsole.WriteInfo(stderr.TrimEnd());
                 if (!string.IsNullOrWhiteSpace(stdout)) MyConsole.WriteInfo(stdout.TrimEnd());
