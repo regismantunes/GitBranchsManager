@@ -10,6 +10,7 @@
         Task<bool> BranchExistsRemotelyAsync(string branch, CancellationToken cancellationToken = default);
         Task<bool> CheckoutAsync(string branch, CancellationToken cancellationToken = default);
         Task CheckoutNewBranchAsync(string branch, CancellationToken cancellationToken = default);
+        Task CheckoutRemoteBranchAsync(string branch, CancellationToken cancellationToken = default);
         Task CheckoutToMainAsync(CancellationToken cancellationToken = default);
         Task DeleteLocalBranchAsync(string branch, CancellationToken cancellationToken = default);
         Task<string> GetCurrentBranchAsync(CancellationToken cancellationToken = default);

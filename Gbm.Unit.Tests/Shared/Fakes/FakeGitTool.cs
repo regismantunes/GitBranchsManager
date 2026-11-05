@@ -20,6 +20,7 @@ public class FakeGitTool : IGitTool
     public Task<bool> BranchExistsRemotelyAsync(string branch, CancellationToken cancellationToken = default) => Task.FromResult(true);
     public Task<bool> CheckoutAsync(string branch, CancellationToken cancellationToken = default) => Task.FromResult(true);
     public Task CheckoutNewBranchAsync(string branch, CancellationToken cancellationToken = default) => Task.CompletedTask;
+public Task CheckoutRemoteBranchAsync(string branch, CancellationToken cancellationToken = default) => Task.CompletedTask;
     public Task CheckoutToMainAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
     public Task DeleteLocalBranchAsync(string branch, CancellationToken cancellationToken = default) => Task.CompletedTask;
     public Task<string> GetCurrentBranchAsync(CancellationToken cancellationToken = default) => Task.FromResult("main");

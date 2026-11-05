@@ -172,6 +172,17 @@ namespace Gbm.Services.Git
             return RunGitAsync($"checkout -b {branch}", cancellationToken);
         }
 
+        public Task CheckoutRemoteBranchAsync(string branch, CancellationToken cancellationToken = default)
+        {
+            return CheckoutRemoteBranchCoreAsync(branch, cancellationToken);
+        }
+
+        private async Task CheckoutRemoteBranchCoreAsync(string branch, CancellationToken cancellationToken)
+        {
+            await RunGitAsync($"fetch origin {branch}", cancellationToken);
+            await RunGitAsync($"checkout --track origin/{branch}", cancellationToken);
+        }
+
         public async Task PushAsync(CancellationToken cancellationToken = default)
         {
             var branch = await GetCurrentBranchAsync(cancellationToken);
