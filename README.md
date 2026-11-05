@@ -1,177 +1,133 @@
 # Git Branch Manager (`gbm`)
 
-A .NET CLI tool that manages git branches across **multiple related repositories** at once, driven by task/ticket IDs (e.g., Jira issues).
-
-Instead of manually creating, switching, or merging branches in each repository, `gbm` lets you run one command and have it applied consistently across all relevant repos.
-
----
-
-## Features
-
-- 🌱 Create task branches across multiple repositories in a single command
-- 🔀 Checkout, pull, push, and remove branches in all repos at once
-- 🔄 Update task branches from main or from another task branch
-- ⬅️ Merge task branches into `develop` and push
-- 🔧 Create GitHub pull requests for all task branches, with automatic cross-linking
-- 💾 Save task metadata (summary, description, branch name) locally, with Jira integration
-- ⚙️ Per-user configuration (base path, GitHub token, Jira credentials, branch name format)
-
----
+`gbm` is a .NET CLI for managing task branches across related Git repositories. A task ID can resolve to locally saved task information and a configured branch name; branch operations can then target explicit repositories or discover repositories that contain the branch.
 
 ## Requirements
 
-- [.NET 10 SDK](https://dotnet.microsoft.com/download)
-- Git installed and available on `PATH`
-- Repositories organized as subdirectories under a common **base path**
+- .NET 10 SDK
+- Git available on `PATH`
+- Repositories as subdirectories of a configured base path
+- Visual Studio MSBuild 18 Insiders for the `-build` command and build validation in `-push` / `-pr`; the build tool also uses Azure CLI (`az`) to build top-level `.bicep` files
 
----
+## Install and run
 
-## Installation
+Build from source:
 
-### Option 1 — Run from source
-
-```bash
+```cmd
 git clone https://github.com/regismantunes/GitBranchsManager
 cd GitBranchsManager
-dotnet build Gbm
+dotnet build GitBranchManager.sln
 ```
 
-Then use `gbm.cmd` (Windows) to invoke the tool:
+Run commands through the Windows wrapper or directly through the project:
 
 ```cmd
 gbm.cmd <command> [args]
+dotnet run --project Gbm -- <command> [args]
 ```
 
-### Option 2 — Publish a self-contained executable
+## Quick start
 
-```bash
-dotnet publish Gbm -c Release
-```
-
-The `gbm.cmd` wrapper automatically finds the published executable.
-
----
-
-## Quick Start
-
-### 1. Set up the base path
+Configure the base directory and, for GitHub pull requests, the repository owner and token:
 
 ```cmd
 gbm -b "C:\Projects"
+gbm -gt <GitHubToken>
+gbm -go <GitHubOwner>
+gbm -jd <JiraDomain>
 ```
 
-All repositories must be direct subdirectories of this path (e.g., `C:\Projects\my-api`, `C:\Projects\my-frontend`).
+Set Jira credentials with `-ju` and `-jp` or the OAuth options (`-jc`, `-js`, `-ja`, `-jt`) when Jira authentication is needed.
 
-### 2. Configure GitHub (for PR commands)
-
-```cmd
-gbm --github-token <your-token>
-gbm --github-owner <org-or-username>
-```
-
-### 3. Save a task
+Save task information interactively or supply it on the command line. When a summary or description prompt is left blank, `gbm` reads that value from the clipboard. `norepo` skips repository selection/branch creation; otherwise, repositories can be specified at the end:
 
 ```cmd
 gbm -t PROJ-123
+gbm -t PROJ-123 -summary "Fix login" -description "Correct login handling" -branch "feature/PROJ-123-fix-login" api frontend
 ```
 
-Prompts for summary, description, and branch name. Clipboard content is used if input is empty. Optionally creates branches immediately.
-
-### 4. Create branches in all repos
+Create branches, validate builds, then open pull requests:
 
 ```cmd
-gbm -n PROJ-123 my-api my-frontend my-sdk
-```
-
-### 5. Open pull requests
-
-```cmd
+gbm -n PROJ-123 api frontend
+gbm -build PROJ-123 api frontend
 gbm -pr PROJ-123
 ```
 
-Creates GitHub PRs for each repo that has the task branch, and cross-links all PRs in their descriptions.
-
----
-
-## Command Reference
+## Command reference
 
 ### Configuration
 
 | Command | Description |
 |---|---|
-| `gbm -b <path>` | Set base path (root of all repositories) |
-| `gbm --github-token <token>` | Set GitHub personal access token |
-| `gbm --github-owner <owner>` | Set GitHub repositories owner |
-| `gbm --jira-domain <domain>` | Set Jira domain |
-| `gbm --jira-mail <mail>` | Set Jira user email |
-| `gbm --jira-password <password>` | Set Jira user password |
-| `gbm -bn <format>` | Set branch name format (e.g., `feature/{TaskId}_{TaskSummary}`) |
-| `gbm --list-repos <true\|false>` | List available repos interactively after task creation |
-| `gbm --version` | Print current version |
+| `gbm -b <BasePath>` | Set the fully qualified root directory containing repositories and local task/PR data |
+| `gbm -gt <GitHubToken>` | Set the GitHub personal access token |
+| `gbm -go <RepositoriesOwner>` | Set the GitHub organization or user that owns the repositories |
+| `gbm -jd <Domain>` | Set the Jira domain |
+| `gbm -ju <UserMail>` | Set Jira user email (for username/password authentication) |
+| `gbm -jp <UserPassword>` | Set Jira user password |
+| `gbm -jc <ConsumerKey>` | Set Jira OAuth consumer key |
+| `gbm -js <ConsumerSecret>` | Set Jira OAuth consumer secret |
+| `gbm -ja <JiraAccessToken>` | Set Jira OAuth access token |
+| `gbm -jt <JiraTokenSecret>` | Set Jira OAuth token secret |
+| `gbm -bn <BranchDefaultNameFormat>` | Set the default branch format; supports `{TaskId}` and `{TaskSummary}` |
+| `gbm -tlr <true\|false>` | Set whether to list repositories after task creation |
+| `gbm -v` | Display the application version |
 
 ### Tasks
 
 | Command | Description |
 |---|---|
-| `gbm -t <TaskId>` | Save task metadata locally (and optionally create branches) |
+| `gbm -t <TaskId> [-summary <Task Summary>] [-description <Task Description>] [-branch <Task Branch>\|usedefaultbranch] [norepo\|Repos...]` | Save task information; missing values are prompted for. Can optionally create branches in the selected repositories. |
+| `gbm -ti <TaskId>` | Show locally saved task summary, description, and branch name |
+
+Example: `gbm -t PROJ-123 -summary "Fix login" -description "Correct login handling" usedefaultbranch api frontend`
 
 ### Branches
 
-All branch commands accept an optional `[Repos...]` list. When omitted, `gbm` auto-detects repositories that contain the task branch.
+Branch commands accept optional repository names. If omitted, repositories containing the task branch are discovered automatically. `-s` also considers remote branches. `-n` requires at least one repository.
 
-| Command | Example | Description |
-|---|---|---|
-| `-n` | `gbm -n PROJ-123 api frontend` | Create task branch in each repo (from main, after pull) |
-| `-l` | `gbm -l PROJ-123` | List repos that have the task branch |
-| `-s` | `gbm -s PROJ-123` | Checkout task branch in each repo and pull |
-| `-u` | `gbm -u PROJ-123 [--origin PROJ-100]` | Update task branch from main, or from another task branch |
-| `-push` | `gbm -push PROJ-123` | Push task branch to remote |
-| `-pull` | `gbm -pull PROJ-123` | Pull task branch from remote |
-| `-d` | `gbm -d PROJ-123` | Merge task branch into `develop` and push |
-| `-r` | `gbm -r PROJ-123` | Delete local task branch in each repo |
+| Command | Description |
+|---|---|
+| `gbm -n <TaskId> [Repos...]` | Create task branches from the updated `main` branch |
+| `gbm -l <TaskId> [Repos...]` | List the selected repositories that have the task branch |
+| `gbm -s <TaskId/Branch> [Repos...]` | Check out the task branch and pull its latest changes |
+| `gbm -u <TaskId> [--origin <TaskId>] [Repos...]` | Update the task branch from `main`, or from another task branch with `--origin` |
+| `gbm -build <TaskId> [Repos...]` | Check out the task branch and validate builds in each repository |
+| `gbm -push <TaskId> [nobuild] [Repos...]` | Validate builds and push the task branches; `nobuild` skips validation |
+| `gbm -pull <TaskId> [Repos...]` | Pull the task branches from their remotes |
+| `gbm -d <TaskId> [nobuild] [Repos...]` | Merge task branches into `develop` and push; repositories ending in `sdk` are skipped, and `nobuild` skips build validation |
+| `gbm -r <TaskId> [Repos...]` | Delete local task branches |
 
-### Pull Requests
+### Pull requests
 
-| Command | Example | Description |
-|---|---|---|
-| `-pr` | `gbm -pr PROJ-123 [nopush]` | Create GitHub PRs; cross-links all related PRs. Add `nopush` to skip pushing local changes. |
-| `-pri` | `gbm -pri PROJ-123` | List saved PR info for a task |
+| Command | Description |
+|---|---|
+| `gbm -pr <TaskId> [nopush] [nobuild] [Repos...]` | Get task information from Jira, validate builds, push local changes unless `nopush` is used, create GitHub PRs, and cross-link related PRs. `nobuild` skips build validation. |
+| `gbm -pri <TaskId>` | List saved pull request information for a task |
 
----
+## Branch name format
 
-## Branch Name Format
-
-You can configure a default branch naming convention:
+Set the default format with `-bn`:
 
 ```cmd
-gbm -bn "feature/{TaskId}_{TaskSummary}"
+gbm -bn "feature/{TaskId}-{TaskSummary}"
 ```
 
-Supported placeholders:
+`{TaskId}` is replaced with the task ID and `{TaskSummary}` with a branch-safe form of the task summary. When saving a task, `usedefaultbranch` selects this configured format; `-branch` can provide a custom name.
 
-| Placeholder | Replaced with |
-|---|---|
-| `{TaskId}` | The task ID (e.g., `PROJ-123`) |
-| `{TaskSummary}` | The task summary (e.g., `fix-login-bug`) |
+## Data and configuration
 
-When running `gbm -t`, the formatted name is shown as the default — press Enter to accept it, or type a custom name.
+User settings are stored in `%APPDATA%\Gbm\config.json`. Task information is stored in `tasksinfo.json` and pull request information in `pullrequestsinfo.json`, both under the configured base path.
 
----
+## Project structure
 
-## Project Structure
-
+```text
+Gbm/                 CLI application, commands, integrations, and persistence
+Gbm.Unit.Tests/      xUnit unit tests
+gbm.cmd              Windows launcher
+GitBranchManager.sln Solution
 ```
-GitBranchsManager/
-├── Gbm/                    # CLI application
-│   ├── Commands/           # Command implementations
-│   ├── Services/           # Git, GitHub, Jira integrations
-│   └── Persistence/        # Local configuration and data storage
-├── Gbm.Unit.Tests/         # xUnit unit tests
-├── gbm.cmd                 # Windows launcher script
-└── GitBranchManager.sln
-```
-
----
 
 ## License
 

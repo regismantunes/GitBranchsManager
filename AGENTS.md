@@ -20,10 +20,10 @@ Gbm/
 ├── Program.cs                      # Entry point; wires DI and runs the console app
 ├── Commands/                       # CLI commands (grouped by domain)
 │   ├── CommandGroups.cs            # Group name constants
-│   ├── BranchesCommands/           # Branch lifecycle commands (-n, -l, -s, -u, -push, -pull, -d, -r)
+│   ├── BranchesCommands/           # Branch lifecycle and build commands (-n, -l, -s, -u, -build, -push, -pull, -d, -r)
 │   ├── ConfigurationCommands/      # Tool setup commands (base path, tokens, formats)
-│   ├── PullRequestCommands/        # GitHub PR creation and cross-linking (-pr, -prl)
-│   └── TaskInfoCommands/           # Task metadata storage (-t)
+│   ├── PullRequestCommands/        # GitHub PR creation/cross-linking (-pr) and listing (-pri)
+│   └── TaskInfoCommands/           # Task metadata storage and display (-t, -ti)
 ├── Services/                       # Business logic / external integrations
 │   ├── Git/                        # IGitTool / GitTool — wraps git CLI
 │   ├── GitHub/                     # IGitHubClient / GitHubClient — GitHub REST API
@@ -43,56 +43,66 @@ Gbm/
 
 ### Configuration Commands (`1. Configuration Commands`)
 
-These must be set up before using branch or PR commands.
+Configure the base path and Jira domain before commands that access repositories or local task/PR data. GitHub token and owner are required for GitHub PR operations; Jira authentication settings enable Jira integration.
 
 | Command | Description |
 |---|---|
-| `gbm --set-base-path <path>` | Set the root directory containing all repositories |
-| `gbm --set-github-token <token>` | Set GitHub personal access token |
-| `gbm --set-github-owner <owner>` | Set GitHub repositories owner (org or user) |
-| `gbm --set-jira-domain <domain>` | Set Jira domain |
-| `gbm --set-jira-mail <mail>` | Set Jira user email |
-| `gbm --set-jira-password <password>` | Set Jira user password |
-| `gbm --set-branch-format <format>` | Set default branch name format (supports `{TaskId}`, `{TaskSummary}`) |
-| `gbm --set-list-repos <true\|false>` | List repositories after task creation |
-| `gbm --version` | Display the current version |
+| `gbm -b <BasePath>` | Set the fully qualified root containing repositories and local task/PR data |
+| `gbm -gt <GitHubToken>` | Set GitHub personal access token |
+| `gbm -go <RepositoriesOwner>` | Set GitHub repositories owner (org or user) |
+| `gbm -jd <Domain>` | Set Jira domain |
+| `gbm -ju <UserMail>` | Set Jira user email |
+| `gbm -jp <UserPassword>` | Set Jira user password |
+| `gbm -jc <ConsumerKey>` | Set Jira OAuth consumer key |
+| `gbm -js <ConsumerSecret>` | Set Jira OAuth consumer secret |
+| `gbm -ja <JiraAccessToken>` | Set Jira OAuth access token |
+| `gbm -jt <JiraTokenSecret>` | Set Jira OAuth token secret |
+| `gbm -bn <BranchDefaultNameFormat>` | Set default branch name format (supports `{TaskId}`, `{TaskSummary}`) |
+| `gbm -tlr <true\|false>` | List repositories after task creation |
+| `gbm -v` | Display the current version |
 
 ### Task Commands (`2. Tasks Commands`)
 
 | Command | Description |
 |---|---|
-| `gbm -t <TaskId>` | Save task metadata (summary, description, branch name). Prompts interactively; reads from clipboard if input is empty. Optionally creates branches immediately after. |
+| `gbm -t <TaskId> [-summary <Task Summary>] [-description <Task Description>] [-branch <Task Branch>\|usedefaultbranch] [norepo\|Repos...]` | Save task metadata. Prompts for missing values and can create branches in selected repositories; `norepo` skips repository selection/branch creation. |
+| `gbm -ti <TaskId>` | Show locally saved task summary, description, and branch name |
 
 ### Branch Commands (`3. Branchs Commands`)
 
-All branch commands accept `[Repos...]` as optional positional arguments. When omitted, repositories are auto-detected from those that contain the task branch.
+Branch commands accept `[Repos...]` as optional positional arguments. When omitted, repositories are auto-detected from those that contain the task branch; `-s` also considers remote branches. `-n` requires at least one repository.
 
 | Command | Example | Description |
 |---|---|---|
-| `-n` | `gbm -n <TaskId> [Repos...]` | Create new task branch in each repo (from main, after pull) |
+| `-n` | `gbm -n <TaskId> [Repos...]` | Create new task branch in each repo (from updated `main`) |
 | `-l` | `gbm -l <TaskId> [Repos...]` | List repos that have the task branch |
 | `-s` | `gbm -s <TaskId/Branch> [Repos...]` | Checkout task branch in each repo and pull |
 | `-u` | `gbm -u <TaskId> [--origin <TaskId>] [Repos...]` | Update task branch from main (or another task branch via `--origin`) |
-| `-push` | `gbm -push <TaskId> [Repos...]` | Push task branch to remote in each repo |
+| `-build` | `gbm -build <TaskId> [Repos...]` | Check out task branches and validate builds |
+| `-push` | `gbm -push <TaskId> [nobuild] [Repos...]` | Validate builds and push task branches; `nobuild` skips validation |
 | `-pull` | `gbm -pull <TaskId> [Repos...]` | Pull task branch from remote in each repo |
-| `-d` | `gbm -d <TaskId> [Repos...]` | Merge task branch into `develop` and push |
+| `-d` | `gbm -d <TaskId> [nobuild] [Repos...]` | Merge task branch into `develop` and push; repositories ending in `sdk` are skipped, and `nobuild` skips build validation |
 | `-r` | `gbm -r <TaskId> [Repos...]` | Delete local task branch in each repo |
 
 ### Pull Request Commands (`4. Pull Requests Commands`)
 
 | Command | Example | Description |
 |---|---|---|
-| `-pr` | `gbm -pr <TaskId> [nopush] [Repos...]` | Create GitHub PRs for task branches; cross-links all PRs in their descriptions. Pushes local changes unless `nopush` is provided. |
-| `-prl` | `gbm -prl <TaskId>` | List existing PR info saved for a task |
+| `-pr` | `gbm -pr <TaskId> [nopush] [nobuild] [Repos...]` | Get task information from Jira, validate builds, create GitHub PRs, and cross-link related PRs. Pushes local changes unless `nopush`; `nobuild` skips build validation. |
+| `-pri` | `gbm -pri <TaskId>` | List saved PR information for a task |
+
+### Task information commands (`2. Tasks Commands`)
+
+`-t` accepts `-summary`, `-description`, and `-branch` options; `usedefaultbranch` selects the configured branch format. Missing values are collected interactively.
 
 ---
 
 ## Key Concepts
 
-- **BasePath**: The root folder where all related repositories live as subdirectories. Set with `--set-base-path`.
+- **BasePath**: The root folder where all related repositories live as subdirectories. Set with `-b`.
 - **TaskId**: A unique identifier for a task (e.g., a Jira ticket like `PROJ-123`). Used to look up the stored branch name.
 - **BranchDefaultNameFormat**: A configurable template (e.g., `feature/{TaskId}-{TaskSummary}`) used to auto-generate branch names when saving a task.
-- **Cross-repo operations**: All branch commands iterate over the resolved list of repositories, running git operations sequentially on each.
+- **Cross-repo operations**: Branch commands iterate over the resolved repository list and run Git operations sequentially. Build validation uses Visual Studio MSBuild 18 Insiders; top-level `.bicep` files are built through Azure CLI.
 - **PR cross-linking**: The `-pr` command creates PRs on GitHub and updates all of them with a **Related PRs** section linking to each other.
 
 ---
@@ -101,7 +111,7 @@ All branch commands accept `[Repos...]` as optional positional arguments. When o
 
 ### Tech Stack
 
-- **.NET 8** — C# 12, top-level records, primary constructors
+- **.NET 10** — C# top-level statements, records, and primary constructors
 - **xUnit** — unit tests in `Gbm.Unit.Tests/`
 - **RA.Console.DependencyInjection** — command routing and DI wiring
 - **TextCopy** — clipboard read support for task input
@@ -147,7 +157,7 @@ gbm.cmd <args>
 ## Conventions
 
 - Use `MyConsole` static helpers (`WriteCommandHeader`, `WriteStep`, `WriteSucess`, `WriteError`, `WriteInfo`) for all console output — do not use `Console` directly.
-- Return `0` for success, `1` for handled errors.
+- Commands return `0` for success and generally `1` for handled errors; argument validation handled by middleware returns `2`.
 - All git, GitHub, and Jira operations are async and accept a `CancellationToken`.
 - Repository names are matched case-insensitively.
 - Repositories whose names end with `sdk` are skipped in the `-d` (send-to-develop) command.
