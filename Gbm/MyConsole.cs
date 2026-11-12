@@ -3,6 +3,7 @@ namespace Gbm
     public static class MyConsole
     {
         private static bool _cursorAvailable = true;
+
         #region Colors
         public static ConsoleColor ErrorColor { get; set; } = ConsoleColor.Red;
         public static ConsoleColor SucessColor { get; set; } = ConsoleColor.Green;
@@ -49,28 +50,16 @@ namespace Gbm
         #endregion
 
         #region Read Methods
-        public static ValueTask<string?> ReadLineOrEndAsync(CancellationToken cancellationToken = default)
-            => Console.In.ReadLineAsync(cancellationToken);
-
-        public static string ReadLineThenClear()
+        public static async ValueTask<string?> ReadLineOrEndAsync(CancellationToken cancellationToken = default)
         {
-            var input = ReadLine();
+            var input = await Console.In.ReadLineAsync(cancellationToken);
             BackToPreviousLine();
             return input;
         }
 
-        public static string ReadLine()
-        {
-            try
-            {
-                SetCursorVisible(true);
-                return Console.ReadLine() ?? string.Empty;
-            }
-            finally
-            {
-                SetCursorVisible(false);
-            }
-        }
+        public static string ReadLine() => ReadWithProgress();
+
+        public static string ReadLineThenClear() => ReadWithProgress(true);
 
         public static bool ReadYesNo(string prompt)
         {
@@ -126,7 +115,9 @@ namespace Gbm
             Console.ForegroundColor = originalColor;
             Console.SetCursorPosition(previousCursorLeft, previousCursorTop);
         }
-        
+
+        private static void UpdateProgressBar() => UpdateProgressBar(_progressPercent);
+
         public static void FinishProgressBar()
         {
             if (!_progressBarActive) return;
@@ -165,6 +156,41 @@ namespace Gbm
             _progressBarCursorTop = Console.CursorTop;
             UpdateProgressBar(_progressPercent);
             Console.SetCursorPosition(0, _progressBarCursorTop);
+        }
+        
+        private static string ReadWithProgress(bool thenClear = false)
+        {
+            string read()
+            {
+                SetCursorVisible(true);
+                var input = Console.ReadLine() ?? string.Empty;
+                SetCursorVisible(false);
+                if (thenClear) BackToPreviousLine();
+                return input;
+            }
+
+            if (!_progressBarActive)
+                return read();
+
+            var currentCursorPosition = _progressBarCursorTop;
+            Console.SetCursorPosition(0, _progressBarCursorTop);
+            Console.WriteLine(new string(' ', Console.WindowWidth));
+            _progressBarCursorTop = Console.CursorTop;
+            UpdateProgressBar(_progressPercent);
+            Console.SetCursorPosition(0, currentCursorPosition);
+            
+            var input = read();
+
+            if (thenClear)
+            {
+                Console.SetCursorPosition(0, _progressBarCursorTop);
+                Console.WriteLine(new string(' ', Console.WindowWidth));
+                _progressBarCursorTop--;
+                UpdateProgressBar(_progressPercent);
+            }
+
+            Console.SetCursorPosition(0, _progressBarCursorTop);
+            return input;
         }
 
         private static void SetCursorVisible(bool visible) => TryCursorOperation(() => Console.CursorVisible = visible);

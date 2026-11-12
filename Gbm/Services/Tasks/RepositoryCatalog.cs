@@ -6,8 +6,14 @@ namespace Gbm.Services.Tasks;
 public sealed class RepositoryCatalog(IGitTool gitTool)
 {
     public async Task<string[]> GetAsync(CancellationToken cancellationToken = default)
-        => (await gitTool.GetAllRepositoriesAsync(cancellationToken).ToArrayAsync(cancellationToken))
-            .Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase).ToArray();
+    {
+        var repositories = await gitTool.GetAllRepositoriesAsync(cancellationToken)
+            .ToArrayAsync(cancellationToken);
+            
+        return [.. repositories
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Order(StringComparer.OrdinalIgnoreCase)];
+    }
 
     public async Task<string[]> ValidateAsync(string[] requested, CancellationToken cancellationToken = default)
     {
@@ -24,10 +30,10 @@ public sealed class RepositoryCatalog(IGitTool gitTool)
         {
             if (string.IsNullOrWhiteSpace(name) || name is "." or ".." || name.IndexOfAny(['/', '\\', ':']) >= 0)
                 throw new ArgsValidationException($"Invalid repository name '{name}'.");
-            var canonical = inventory.FirstOrDefault(r => r.Equals(name, StringComparison.OrdinalIgnoreCase));
-            if (canonical is null) throw new ArgsValidationException($"Repository '{name}' was not found under BasePath.");
+            var canonical = inventory.FirstOrDefault(r => r.Equals(name, StringComparison.OrdinalIgnoreCase))
+                ?? throw new ArgsValidationException($"Repository '{name}' was not found under BasePath.");
             result.Add(canonical);
         }
-        return result.ToArray();
+        return [.. result];
     }
 }

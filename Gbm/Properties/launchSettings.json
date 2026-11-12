@@ -19,6 +19,10 @@
     "gbm -d": {
       "commandName": "Project",
       "commandLineArgs": "-d SSM-1978"
+    },
+    "gbm -rb": {
+      "commandName": "Project",
+      "commandLineArgs": "-rb SSM-2011"
     }
   }
 }
