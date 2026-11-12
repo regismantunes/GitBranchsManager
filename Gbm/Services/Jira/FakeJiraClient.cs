@@ -9,5 +9,8 @@ namespace Gbm.Services.Jira
 
         public Task<TaskInfo?> GetTaskInfoAsync(string taskId, CancellationToken cancellationToken = default)
             => _repository.GetAsync(taskId, cancellationToken);
+
+        public Task<TaskInfo?> GetTaskInfoFromJiraAsync(string taskId, CancellationToken cancellationToken = default)
+            => Task.FromResult<TaskInfo?>(null);
     }
 }

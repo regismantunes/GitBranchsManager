@@ -2,6 +2,7 @@ using Gbm.Persistence.Configuration;
 using Gbm.Persistence.Repositories.Interfaces;
 using Gbm.Services.Configuration;
 using Gbm.Services.Git;
+using Gbm.Services.Jira;
 using Microsoft.Extensions.Configuration;
 using RA.Console.DependencyInjection;
 using RA.Console.DependencyInjection.Attributes;
@@ -10,7 +11,7 @@ using TextCopy;
 
 namespace Gbm.Commands.TaskInfoCommands
 {
-    public class SaveTaskInfoCommand(ITaskInfoRepository repository, IGitTool gitTool, IConfiguration configuration)
+    public class SaveTaskInfoCommand(ITaskInfoRepository repository, IGitTool gitTool, IConfiguration configuration, IJiraClient jiraClient)
     {
         [CommandAsyncWithArgsBuilderAsync<SaveTaskInfoCommandArgsBuilder>("-t",
             Description = "Save task information",
@@ -21,6 +22,19 @@ namespace Gbm.Commands.TaskInfoCommands
         {
             MyConsole.WriteCommandHeader($"💾 Saving task information...");
             MyConsole.WriteStep($"Please, inform the task details:");
+
+            if (string.IsNullOrWhiteSpace(taskSummary) || string.IsNullOrWhiteSpace(taskDescription))
+            {
+                var jiraTaskInfo = await jiraClient.GetTaskInfoFromJiraAsync(taskId, cancellationToken);
+                if (jiraTaskInfo is not null)
+                {
+                    if (string.IsNullOrWhiteSpace(taskSummary))
+                        taskSummary = jiraTaskInfo.Summary;
+                    if (string.IsNullOrWhiteSpace(taskDescription))
+                        taskDescription = jiraTaskInfo.Description;
+                    MyConsole.WriteInfo("Jira task details loaded.");
+                }
+            }
 
             if (string.IsNullOrWhiteSpace(taskSummary))
             {
