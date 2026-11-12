@@ -4,7 +4,6 @@ namespace Gbm.Services.Jira
 {
     public interface IJiraClient
     {
-        Task<TaskInfo?> GetTaskInfoAsync(string taskId, CancellationToken cancellationToken = default);
         Task<TaskInfo?> GetTaskInfoFromJiraAsync(string taskId, CancellationToken cancellationToken = default);
     }
 }

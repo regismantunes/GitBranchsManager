@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**Git Branch Manager (gbm)** is a .NET CLI tool that orchestrates git branch operations across multiple related repositories simultaneously. It maps a task/ticket ID (e.g., a Jira issue) to a branch name and applies branch commands — create, checkout, pull, push, merge, remove — to all configured repos in one invocation.
+**Git Branch Manager (gbm)** is a .NET CLI tool that orchestrates git branch operations across multiple related repositories. It maps a task/ticket ID (e.g., a Jira issue) to a separate branch name per repository and applies branch commands — create, checkout, pull, push, merge, remove — in one invocation.
 
 The solution is structured as two projects:
 
@@ -23,8 +23,9 @@ Gbm/
 │   ├── BranchesCommands/           # Branch lifecycle and build commands (-n, -l, -s, -u, -build, -push, -pull, -d, -r)
 │   ├── ConfigurationCommands/      # Tool setup commands (base path, tokens, formats)
 │   ├── PullRequestCommands/        # GitHub PR creation/cross-linking (-pr) and listing (-pri)
-│   └── TaskInfoCommands/           # Task metadata storage and display (-t, -ti)
+│   └── TaskInfoCommands/           # Task metadata, display and rediscovery (-t, -ti, -rb)
 ├── Services/                       # Business logic / external integrations
+│   ├── Tasks/                      # Task resolution, discovery, selection, target resolution and branch creation
 │   ├── Git/                        # IGitTool / GitTool — wraps git CLI
 │   ├── GitHub/                     # IGitHubClient / GitHubClient — GitHub REST API
 │   ├── Jira/                       # IJiraClient / JiraClient — Jira REST API
@@ -66,23 +67,24 @@ Configure the base path and Jira domain before commands that access repositories
 | Command | Description |
 |---|---|
 | `gbm -t <TaskId> [-summary <Task Summary>] [-description <Task Description>] [-branch <Task Branch>\|usedefaultbranch] [norepo\|Repos...]` | Save task metadata. Prompts for missing values and can create branches in selected repositories; `norepo` skips repository selection/branch creation. |
-| `gbm -ti <TaskId>` | Show locally saved task summary, description, and branch name |
+| `gbm -ti <TaskId>` | Show/import task metadata, URL and repository/branch mappings |
+| `gbm -rb <TaskId>` | Rediscover heads from origin across all repositories and replace mappings without changing Git state |
 
 ### Branch Commands (`3. Branchs Commands`)
 
-Branch commands accept `[Repos...]` as optional positional arguments. When omitted, repositories are auto-detected from those that contain the task branch; `-s` also considers remote branches. `-n` requires at least one repository.
+Branch commands accept `[Repos...]` as optional positional arguments. When omitted, eligible repositories are selected from saved mappings; `-s` also considers remote branches. Unknown tasks are imported from Jira and discovered across all direct Git children of BasePath. `-n` requires at least one repository.
 
 | Command | Example | Description |
 |---|---|---|
-| `-n` | `gbm -n <TaskId> [Repos...]` | Create new task branch in each repo (from updated `main`) |
+| `-n` | `gbm -n <TaskId> <Repos...>` | Reuse mappings; generate names for unmapped repos, tracking existing remote branches or creating from updated main/master |
 | `-l` | `gbm -l <TaskId> [Repos...]` | List repos that have the task branch |
-| `-s` | `gbm -s <TaskId/Branch> [Repos...]` | Checkout task branch in each repo and pull |
-| `-u` | `gbm -u <TaskId> [--origin <TaskId>] [Repos...]` | Update task branch from main (or another task branch via `--origin`) |
+| `-s` | `gbm -s <TaskId/Branch> [Repos...]` or `gbm -s --branch <Branch> [Repos...]` | Checkout/pull mapped branches or force an exact literal branch |
+| `-u` | `gbm -u <TaskId> [--origin <TaskId/Branch>\|--origin-branch <Branch>] [Repos...]` | Update from each repo's principal branch, mapped task origin or exact literal origin |
 | `-build` | `gbm -build <TaskId> [Repos...]` | Check out task branches and validate builds |
 | `-push` | `gbm -push <TaskId> [nobuild] [Repos...]` | Validate builds and push task branches; `nobuild` skips validation |
 | `-pull` | `gbm -pull <TaskId> [Repos...]` | Pull task branch from remote in each repo |
 | `-d` | `gbm -d <TaskId> [nobuild] [Repos...]` | Merge task branch into `develop` and push; repositories ending in `sdk` are skipped, and `nobuild` skips build validation |
-| `-r` | `gbm -r <TaskId> [Repos...]` | Delete local task branch in each repo |
+| `-r` | `gbm -r <TaskId> [Repos...]` | Delete local task branches, retaining mappings |
 
 ### Pull Request Commands (`4. Pull Requests Commands`)
 
@@ -100,10 +102,16 @@ Branch commands accept `[Repos...]` as optional positional arguments. When omitt
 ## Key Concepts
 
 - **BasePath**: The root folder where all related repositories live as subdirectories. Set with `-b`.
-- **TaskId**: A unique identifier for a task (e.g., a Jira ticket like `PROJ-123`). Used to look up the stored branch name.
-- **BranchDefaultNameFormat**: A configurable template (e.g., `feature/{TaskId}-{TaskSummary}`) used to auto-generate branch names when saving a task.
+- **TaskId**: A unique identifier for a task (e.g., `PROJ-123`). IDs and repository names are matched case-insensitively; branch names preserve exact case.
+- **TaskInfo.Repositories**: A list of `RepositoryBranch(Repository, BranchName)` with one branch per repository. `ITaskInfoRepository` separates metadata updates, mapping upsert and full snapshot replacement. Data is stored in `tasksinfo.json`; the former task-level BranchName format is rejected, never silently migrated or overwritten.
+- **BranchDefaultNameFormat**: A template (e.g., `feature/{TaskId}`) used for new mappings. Placeholder substitution is verbatim; invalid Git names are rejected. Existing mappings are reused by `-n` even after the format changes.
+- **Discovery**: Query `origin` heads without fetching; match task-ID substring ignoring case, choose numerically on ambiguity. Failure/cancellation saves no partial discovery. `-rb` replaces the complete mapping set, including removing stale mappings; Git state is unchanged.
+- **Task registration**: `-t norepo` updates metadata only. `-branch` and `usedefaultbranch` apply to selected repositories and cannot be combined with each other or with `norepo`.
+- **Literal branches**: Saved tasks take precedence in `-s`/`--origin`; unknown Jira-shaped IDs are imported. `--branch` and `--origin-branch` force exact literal names. Legacy `-s main/master` selects each repo's principal branch.
 - **Cross-repo operations**: Branch commands iterate over the resolved repository list and run Git operations sequentially. Build validation uses Visual Studio MSBuild 18 Insiders; top-level `.bicep` files are built through Azure CLI.
 - **PR cross-linking**: The `-pr` command creates PRs on GitHub and updates all of them with a **Related PRs** section linking to each other.
+- **Existing PRs**: Identity remains task/repository. Rediscovery does not change existing PR heads or recreate recorded PRs. Related links still update.
+- **Partial failures**: Creation persists confirmed mappings per repo; discovery persists only a complete snapshot. A failed checkout prevents subsequent pull/push/PR in that repo. Multi-repo Git operations have no global rollback; concurrent processes writing the same data file are unsupported.
 
 ---
 

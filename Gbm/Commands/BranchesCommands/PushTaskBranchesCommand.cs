@@ -1,52 +1,29 @@
 using Gbm.Services.Build;
 using Gbm.Services.Git;
+using Gbm.Services.Tasks;
 using RA.Console.DependencyInjection.Attributes;
 
-namespace Gbm.Commands.BranchesCommands
+namespace Gbm.Commands.BranchesCommands;
+
+public class PushTaskBranchesCommand(IGitTool gitTool, IBuildTool dotnetTool)
 {
-    public class PushTaskBranchesCommand(IGitTool gitTool, IBuildTool dotnetTool)
+    [CommandAsyncWithArgsBuilderAsync<BranchesCommandArgsBuilder>("-push", Description = "Build and push mapped task branches",
+        Example = "gbm -push <TaskId> [nobuild] [Repos...]", Group = CommandGroups.Branches, Order = 4)]
+    public async Task<int> ExecuteAsync(RepositoryBranchTarget[] targets, bool noBuild = false, CancellationToken cancellationToken = default)
     {
-        [CommandAsyncWithArgsBuilderAsync<BranchesCommandArgsBuilder>("-push",
-            Description = "Push task branches",
-            Example = "gbm -push <TaskId> [nobuild] [Repos...]",
-            Group = CommandGroups.Branches,
-            Order = 4)]
-        public async Task<int> ExecuteAsync(string taskBranch, string[] repositories, bool noBuild = false, CancellationToken cancellationToken = default)
-        {
-            MyConsole.WriteCommandHeader("📤 Pushing task branches...");
-
-            // Phase 1: validate builds across all repositories
-            if (!noBuild)
-            {
-                MyConsole.WriteHeader($"--- Validating builds ---");
-                gitTool.ShowGitOutput = false;
-                foreach (var repo in repositories)
+        if (!noBuild)
+            foreach (var target in targets)
+                if (!await dotnetTool.BuildBranchAsync(target.Repository, target.BranchName, cancellationToken))
                 {
-                    if (!await dotnetTool.BuildBranchAsync(repo, taskBranch, cancellationToken))
-                    {
-                        MyConsole.WriteError($"❌ Build failed in '{repo}'. Aborting — nothing was pushed.");
-                        return 1;
-                    }
+                    MyConsole.WriteError($"❌ Build failed in '{target.Repository}'. Nothing was pushed.");
+                    return 1;
                 }
-            }
-
-            // Phase 2: push all branches
-            MyConsole.WriteHeader($"--- Pushing branches ---");
-            gitTool.ShowGitOutput = true;
-            foreach (var repo in repositories)
-            {
-                MyConsole.WriteHeader($"--- Processing repository: {repo} ---");
-                await gitTool.SetRepositoryAsync(repo, cancellationToken);
-
-                MyConsole.WriteStep($"→ Checking out to '{taskBranch}'");
-                await gitTool.CheckoutAsync(taskBranch, cancellationToken);
-
-                MyConsole.WriteStep($"→ Pushing '{taskBranch}'");
-                await gitTool.PushAsync(cancellationToken);
-            }
-
-            MyConsole.WriteSucess("✅ Branch's task pushed!");
-            return 0;
-        }
+        await BranchExecution.ForEachAsync(targets, async target =>
+        {
+            await BranchExecution.CheckoutRequiredAsync(gitTool, target, cancellationToken);
+            await gitTool.PushAsync(cancellationToken);
+        });
+        MyConsole.WriteSucess("✅ Task branches pushed!");
+        return 0;
     }
 }

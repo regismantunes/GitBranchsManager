@@ -1,43 +1,29 @@
 using Gbm.Services.Git;
+using Gbm.Services.Tasks;
 using RA.Console.DependencyInjection.Attributes;
 
-namespace Gbm.Commands.BranchesCommands
+namespace Gbm.Commands.BranchesCommands;
+
+public class SetTaskBranchesCommand(IGitTool gitTool)
 {
-    public class SetTaskBranchesCommand(IGitTool gitTool)
+    [CommandAsyncWithArgsBuilderAsync<BranchesCommandArgsBuilder>("-s", Description = "Checkout task branches or a literal branch and pull",
+        Example = "gbm -s <TaskId/Branch> [Repos...] | gbm -s --branch <Branch> [Repos...]", Group = CommandGroups.Branches, Order = 2)]
+    public async Task<int> ExecuteAsync(RepositoryBranchTarget[] targets, CancellationToken cancellationToken = default)
     {
-        [CommandAsyncWithArgsBuilderAsync<BranchesCommandArgsBuilder>("-s",
-            Description = "Checkout to task branches or common branches",
-            Example = "gbm -s <TaskId/Branch> [Repos...]",
-            Group = CommandGroups.Branches,
-            Order = 2)]
-        public async Task<int> ExecuteAsync(string taskBranch, string[] repositories, CancellationToken cancellationToken = default)
+        await BranchExecution.ForEachAsync(targets, async target =>
         {
-            gitTool.ShowGitOutput = true;
-            MyConsole.WriteCommandHeader("🔀 Checking out task branches...");
-            foreach (var repo in repositories)
+            await gitTool.SetRepositoryAsync(target.Repository, cancellationToken);
+            if (!await gitTool.CheckoutAsync(target.BranchName, cancellationToken))
             {
-                MyConsole.WriteHeader($"--- Processing repository: {repo} ---");
-                await gitTool.SetRepositoryAsync(repo, cancellationToken);
-                MyConsole.WriteStep($"→ Setting local branch '{taskBranch}' from {repo}");
-                if (taskBranch == "main" || taskBranch == "master")
-                    await gitTool.CheckoutToMainAsync(cancellationToken);
-                else
-                {
-                    var checkedOut = await gitTool.CheckoutAsync(taskBranch, cancellationToken);
-                    if (!checkedOut)
-                    {
-                        if (!await gitTool.BranchExistsRemotelyAsync(taskBranch, cancellationToken))
-                            continue;
-
-                        await gitTool.CheckoutRemoteBranchAsync(taskBranch, cancellationToken);
-                    }
-                }
-                MyConsole.WriteStep($"→ Pulling latest changes for branch '{taskBranch}' from {repo}");
-                await gitTool.PullAsync(cancellationToken);
+                var remote = await gitTool.GetRemoteBranchNamesAsync(target.Repository, cancellationToken);
+                if (!remote.BranchNames.Contains(target.BranchName, StringComparer.Ordinal))
+                    throw new InvalidOperationException($"Branch '{target.BranchName}' is not available in origin for '{target.Repository}'.");
+                await gitTool.CheckoutRemoteBranchAsync(target.BranchName, cancellationToken);
             }
-
-            MyConsole.WriteSucess($"✅ Repositories setted to {taskBranch}!");
-            return 0;
-        }
+            if (await gitTool.GetCurrentBranchAsync(cancellationToken) != target.BranchName)
+                throw new InvalidOperationException("Checkout did not confirm the requested branch; pull was not performed.");
+            await gitTool.PullAsync(cancellationToken);
+        });
+        return 0;
     }
 }

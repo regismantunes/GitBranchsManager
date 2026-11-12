@@ -1,30 +1,22 @@
 using Gbm.Services.Build;
+using Gbm.Services.Tasks;
 using RA.Console.DependencyInjection.Attributes;
 
-namespace Gbm.Commands.BranchesCommands
+namespace Gbm.Commands.BranchesCommands;
+
+public class BuildTaskBranchesCommand(IBuildTool dotnetTool)
 {
-    public class BuildTaskBranchesCommand(IBuildTool dotnetTool)
+    [CommandAsyncWithArgsBuilderAsync<BranchesCommandArgsBuilder>("-build", Description = "Build each mapped task branch",
+        Example = "gbm -build <TaskId> [Repos...]", Group = CommandGroups.Branches, Order = 3)]
+    public async Task<int> ExecuteAsync(RepositoryBranchTarget[] targets, CancellationToken cancellationToken = default)
     {
-        [CommandAsyncWithArgsBuilderAsync<BranchesCommandArgsBuilder>("-build",
-            Description = "Validate build of task branches",
-            Example = "gbm -build <TaskId> [Repos...]",
-            Group = CommandGroups.Branches,
-            Order = 3)]
-        public async Task<int> ExecuteAsync(string taskBranch, string[] repositories, CancellationToken cancellationToken = default)
-        {
-            MyConsole.WriteCommandHeader("🔨 Validating builds...");
-
-            foreach (var repo in repositories)
+        foreach (var target in targets)
+            if (!await dotnetTool.BuildBranchAsync(target.Repository, target.BranchName, cancellationToken))
             {
-                if (!await dotnetTool.BuildBranchAsync(repo, taskBranch, cancellationToken))
-                {
-                    MyConsole.WriteError($"❌ Build failed in '{repo}'.");
-                    return 1;
-                }
+                MyConsole.WriteError($"❌ Build failed: {target.Repository} -> {target.BranchName}.");
+                return 1;
             }
-
-            MyConsole.WriteSucess("✅ All builds passed!");
-            return 0;
-        }
+        MyConsole.WriteSucess("✅ All builds passed!");
+        return 0;
     }
 }

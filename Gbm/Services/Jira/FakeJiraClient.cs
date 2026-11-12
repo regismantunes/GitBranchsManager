@@ -1,15 +1,9 @@
 ﻿using Gbm.Persistence.Entities;
-using Gbm.Persistence.Repositories.Interfaces;
 
 namespace Gbm.Services.Jira
 {
-    public class FakeJiraClient(ITaskInfoRepository repository) : IJiraClient
+    public class FakeJiraClient : IJiraClient
     {
-        private readonly ITaskInfoRepository _repository = repository ?? throw new ArgumentNullException(nameof(repository));
-
-        public Task<TaskInfo?> GetTaskInfoAsync(string taskId, CancellationToken cancellationToken = default)
-            => _repository.GetAsync(taskId, cancellationToken);
-
         public Task<TaskInfo?> GetTaskInfoFromJiraAsync(string taskId, CancellationToken cancellationToken = default)
             => Task.FromResult<TaskInfo?>(null);
     }

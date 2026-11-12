@@ -49,6 +49,9 @@ namespace Gbm
         #endregion
 
         #region Read Methods
+        public static ValueTask<string?> ReadLineOrEndAsync(CancellationToken cancellationToken = default)
+            => Console.In.ReadLineAsync(cancellationToken);
+
         public static string ReadLineThenClear()
         {
             var input = ReadLine();

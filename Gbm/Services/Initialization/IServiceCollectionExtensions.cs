@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Gbm.Persistence.Configuration;
 using Gbm.Services.Build;
+using Gbm.Services.Tasks;
 
 namespace Gbm.Services.Initialization
 {
@@ -24,8 +25,18 @@ namespace Gbm.Services.Initialization
                 .AddGitTool()
                 .AddDotnetTool()
                 .AddPullRequestInfoRepository()
-                .AddTaskInfoRepository();
+                .AddTaskInfoRepository()
+                .AddTaskServices();
         }
+
+        public static IServiceCollection AddTaskServices(this IServiceCollection services)
+            => services.AddSingleton<RepositoryCatalog>()
+                .AddSingleton<TaskBranchNameFactory>()
+                .AddSingleton<IBranchSelection, ConsoleBranchSelection>()
+                .AddSingleton<ITaskBranchDiscovery, TaskBranchDiscovery>()
+                .AddSingleton<ITaskResolver, TaskResolver>()
+                .AddSingleton<ITaskBranchTargetResolver, TaskBranchTargetResolver>()
+                .AddSingleton<ITaskBranchCreator, TaskBranchCreator>();
 
         public static IServiceCollection AddConfiguration(this IServiceCollection services)
         {
@@ -56,22 +67,21 @@ namespace Gbm.Services.Initialization
                 var jiraTokenSecrety = configuration.GetValue(ConfigurationVariable.JiraTokenSecrety);
                 var jiraUserMail = configuration.GetValue(ConfigurationVariable.JiraUserMail);
                 var jiraUserPassword = configuration.GetValue(ConfigurationVariable.JiraUserPassword);
-                var taskInfoRepository = s.GetRequiredService<ITaskInfoRepository>();
                 if (jiraConsumerKey is not null &&
                     jiraConsumerSecrety is not null &&
                     jiraAcccessToken is not null &&
                     jiraTokenSecrety is not null)
                 {
-                    return new JiraClient(taskInfoRepository, jiraDomain, jiraConsumerKey, jiraConsumerKey, jiraAcccessToken, jiraTokenSecrety);
+                    return new JiraClient(jiraDomain, jiraConsumerKey, jiraConsumerSecrety, jiraAcccessToken, jiraTokenSecrety);
                 }
                 else if (jiraUserMail is not null &&
                     jiraUserPassword is not null)
                 {
-                    return new JiraClient(taskInfoRepository, jiraDomain, jiraUserMail, jiraUserPassword);
+                    return new JiraClient(jiraDomain, jiraUserMail, jiraUserPassword);
                 }
                 else
                 {
-                    return new FakeJiraClient(taskInfoRepository);
+                    return new FakeJiraClient();
                 }
             });
         }

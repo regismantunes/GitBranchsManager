@@ -16,6 +16,11 @@ namespace Gbm.Services.Middleware
                 MyConsole.WriteError(vex.Message);
                 return 2;
             }
+            catch (OperationCanceledException ex)
+            {
+                MyConsole.WriteError($"Operation cancelled: {ex.Message}");
+                return 1;
+            }
             catch (Exception ex)
             {
                 MyConsole.WriteError($"Error: {ex.Message}");

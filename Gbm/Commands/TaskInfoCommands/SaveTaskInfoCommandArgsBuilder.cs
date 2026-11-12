@@ -1,78 +1,51 @@
-﻿using Gbm.Services.Git;
+using Gbm.Services.Tasks;
 using RA.Console.DependencyInjection.Args;
 
-namespace Gbm.Commands.TaskInfoCommands
+namespace Gbm.Commands.TaskInfoCommands;
+
+public sealed class SaveTaskInfoCommandArgsBuilder(RepositoryCatalog catalog) : IArgsBuilderAsync
 {
-    public sealed class SaveTaskInfoCommandArgsBuilder(IGitTool gitTool) : IArgsBuilderAsync
+    public async Task<IDictionary<string, object>> BuildAsync(string[] args, CancellationToken cancellationToken = default)
     {
-        public async Task<IDictionary<string, object>> BuildAsync(string[] args, CancellationToken cancellationToken)
+        if (args is null || args.Length == 0) throw new ArgumentException("Arguments cannot be null or empty.", nameof(args));
+        if (!args[0].Equals("-t", StringComparison.OrdinalIgnoreCase)) throw new ArgsValidationException("Expected -t.");
+        if (args.Length < 2 || string.IsNullOrWhiteSpace(args[1]) || args[1].StartsWith('-')) throw new ArgsValidationException("Missing TaskId.");
+        string? summary = null, description = null, branch = null;
+        var noRepo = false;
+        var useDefault = false;
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var repos = new List<string>();
+        for (var i = 2; i < args.Length; i++)
         {
-            if (args == null ||
-                args.Length == 0)
-                throw new ArgumentException("Arguments cannot be null or empty.", nameof(args));
-
-            var command = args[0].ToLower();
-            if (command != "-t") throw new ArgsValidationException($"Invalid command. Expected '-t' but got '{command}'. Example: gbm -t TaskId");
-            if (args.Length < 2) throw new ArgsValidationException($"Missing TaskId. Example: gbm {command} TaskId");
-
-            var taskId = args[1];
-            string? taskSummary = null;
-            string? taskDescription = null;
-            string? taskBranch = null;
-            bool? useDefaultBranch = null;
-            bool? noRepo = null;
-            var optionalArgs = args.Skip(2).ToList();
-
-            if (optionalArgs.Contains("-summary", StringComparer.InvariantCultureIgnoreCase))
+            var option = args[i].ToLowerInvariant();
+            if (option is "-summary" or "-description" or "-branch" or "norepo" or "usedefaultbranch")
             {
-                var summaryIndex = optionalArgs.IndexOf("-summary");
-                if (summaryIndex == args.Length - 1) throw new ArgsValidationException("Missing summary value after '-summary'. Example: gbm -t TaskId -summary \"Task Summary\"");
-                taskSummary = optionalArgs[summaryIndex + 1];
-                optionalArgs.RemoveRange(summaryIndex, 2);
+                if (!seen.Add(option)) throw new ArgsValidationException($"Duplicate option '{option}'.");
+                if (option == "norepo") { noRepo = true; continue; }
+                if (option == "usedefaultbranch") { useDefault = true; continue; }
+                if (++i >= args.Length || string.IsNullOrWhiteSpace(args[i]) || args[i].StartsWith('-'))
+                    throw new ArgsValidationException($"Missing value for '{option}'.");
+                switch (option)
+                {
+                    case "-summary": summary = args[i]; break;
+                    case "-description": description = args[i]; break;
+                    case "-branch": branch = args[i]; break;
+                }
             }
-
-            if (optionalArgs.Contains("-description", StringComparer.InvariantCultureIgnoreCase))
+            else
             {
-                var descriptionIndex = optionalArgs.IndexOf("-description");
-                if (descriptionIndex == args.Length - 1) throw new ArgsValidationException("Missing description value after '-description'. Example: gbm -t TaskId -description \"Task Description\"");
-                taskDescription = optionalArgs[descriptionIndex + 1];
-                optionalArgs.RemoveRange(descriptionIndex, 2);
+                if (args[i].StartsWith('-')) throw new ArgsValidationException($"Unknown option '{args[i]}'.");
+                repos.Add(args[i]);
             }
-
-            if (optionalArgs.Contains("-branch", StringComparer.InvariantCultureIgnoreCase))
-            {
-                var branchIndex = optionalArgs.IndexOf("-branch");
-                if (branchIndex == args.Length - 1) throw new ArgsValidationException("Missing branch value after '-branch'. Example: gbm -t TaskId -branch \"BranchName\"");
-                taskBranch = optionalArgs[branchIndex + 1];
-                optionalArgs.RemoveRange(branchIndex, 2);
-            }
-
-            if (optionalArgs.Contains("usedefaultbranch", StringComparer.InvariantCultureIgnoreCase))
-            {
-                useDefaultBranch = true;
-                optionalArgs.Remove("usedefaultbranch");
-            }
-
-            if (optionalArgs.Contains("norepo", StringComparer.InvariantCultureIgnoreCase))
-            {
-                noRepo = true;
-                optionalArgs.Remove("norepo");
-            }
-
-            var repositories = optionalArgs.ToArray();
-            foreach (var repo in repositories)
-                await gitTool.SetRepositoryAsync(repo, cancellationToken);
-
-            return new Dictionary<string, object>
-            {
-                { "TaskId", taskId },
-                { "TaskSummary", taskSummary },
-                { "TaskDescription", taskDescription },
-                { "TaskBranch", taskBranch },
-                { "UseDefaultBranch", useDefaultBranch },
-                { "NoRepo", noRepo },
-                { "Repositories", repositories }
-            };
         }
+        if (branch is not null && useDefault) throw new ArgsValidationException("-branch and usedefaultbranch cannot be combined.");
+        if (noRepo && (repos.Count > 0 || branch is not null || useDefault))
+            throw new ArgsValidationException("norepo cannot be combined with repositories or branch options.");
+        var canonical = await catalog.ValidateAsync(repos.ToArray(), cancellationToken);
+        return new Dictionary<string, object>
+        {
+            ["TaskId"] = args[1], ["TaskSummary"] = summary!, ["TaskDescription"] = description!,
+            ["TaskBranch"] = branch!, ["UseDefaultBranch"] = useDefault, ["NoRepo"] = noRepo, ["Repositories"] = canonical
+        };
     }
 }

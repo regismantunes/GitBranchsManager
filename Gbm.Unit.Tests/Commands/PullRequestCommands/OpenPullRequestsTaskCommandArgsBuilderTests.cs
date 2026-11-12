@@ -1,5 +1,5 @@
 using Gbm.Commands.PullRequestCommands;
-using Gbm.Persistence.Entities;
+using Gbm.Services.Tasks;
 using Gbm.Unit.Tests.Shared.Fakes;
 using RA.Console.DependencyInjection.Args;
 
@@ -7,81 +7,35 @@ namespace Gbm.Unit.Tests.Commands.PullRequestCommands;
 
 public class OpenPullRequestsTaskCommandArgsBuilderTests
 {
-    [Fact]
-    public async Task BuildAsync_Throws_OnNullOrEmptyArgs()
-    {
-        var repo = new FakeTaskInfoRepository();
-        var git = new FakeGitTool();
-        var sut = new OpenPullRequestsTaskCommandArgsBuilder(repo, git);
+    private static OpenPullRequestsTaskCommandArgsBuilder Builder(TaskWorld w) => new(w.Resolver, w.Targets, w.Catalog, w.PullRequests);
 
-        await Assert.ThrowsAsync<ArgumentException>(() => sut.BuildAsync(null!));
-        await Assert.ThrowsAsync<ArgumentException>(() => sut.BuildAsync([]));
+    [Fact]
+    public async Task RejectsMissingAndInvalidArguments()
+    {
+        var builder = Builder(new());
+        await Assert.ThrowsAsync<ArgumentException>(() => builder.BuildAsync(null!));
+        await Assert.ThrowsAsync<ArgumentException>(() => builder.BuildAsync([]));
+        await Assert.ThrowsAsync<ArgsValidationException>(() => builder.BuildAsync(["-pr"]));
+        await Assert.ThrowsAsync<ArgsValidationException>(() => builder.BuildAsync(["-pr", "P-1", "nobuild", "nopush"]));
     }
 
     [Fact]
-    public async Task BuildAsync_Throws_OnMissingTaskId()
+    public async Task CarriesOneTaskSnapshotConcreteTargetsAndFlags()
     {
-        var repo = new FakeTaskInfoRepository();
-        var git = new FakeGitTool();
-        var sut = new OpenPullRequestsTaskCommandArgsBuilder(repo, git);
-
-        var ex = await Assert.ThrowsAsync<ArgsValidationException>(() => sut.BuildAsync(["-pr-open"]));
-        Assert.Contains("Missing TaskId", ex.Message);
+        var world = new TaskWorld(); world.SeedTwo();
+        var result = await Builder(world).BuildAsync(["-pr", "PROJ-123", "nopush", "nobuild", "web"]);
+        Assert.False((bool)result["PushLocalChanges"]);
+        Assert.True((bool)result["NoBuild"]);
+        Assert.Equal("fix/PROJ-123-ui", Assert.Single((RepositoryBranchTarget[])result["Targets"]).BranchName);
+        Assert.Equal(0, world.Jira.Calls);
     }
 
     [Fact]
-    public async Task BuildAsync_UsesProvidedRepos()
+    public async Task ExistingPrDoesNotRequireLocalBranchForLinkUpdates()
     {
-        var repo = new FakeTaskInfoRepository();
-        repo.Seed(new TaskInfo("GBM-3", "s", "d", "u", "feature/GBM-3"));
-        var git = new FakeGitTool();
-        var sut = new OpenPullRequestsTaskCommandArgsBuilder(repo, git);
-
-        var dict = await sut.BuildAsync(["-pr-open", "GBM-3", "RepoX", "RepoY"]);
-        Assert.Equal("GBM-3", dict["TaskId"]);
-        Assert.Equal(["RepoX", "RepoY"], dict["Repositories"] as IEnumerable<string>);
-    }
-
-    [Fact]
-    public async Task BuildAsync_FetchesReposFromGit_WhenNotProvided()
-    {
-        var repo = new FakeTaskInfoRepository();
-        repo.Seed(new TaskInfo("GBM-4", "s", "d", "u", "feature/GBM-4"));
-        var git = new FakeGitTool();
-        git.Seed("feature/GBM-4", "RepoA", "RepoB");
-        var sut = new OpenPullRequestsTaskCommandArgsBuilder(repo, git);
-
-        var dict = await sut.BuildAsync(["-pr-open", "GBM-4"]);
-        var repos = Assert.IsAssignableFrom<IEnumerable<string>>(dict["Repositories"]);
-        Assert.Contains("RepoA", repos);
-        Assert.Contains("RepoB", repos);
-    }
-
-    [Fact]
-    public async Task BuildAsync_UsesNoPushOption()
-    {
-        var repo = new FakeTaskInfoRepository();
-        repo.Seed(new TaskInfo("GBM-3", "s", "d", "u", "feature/GBM-3"));
-        var git = new FakeGitTool();
-        git.Seed("feature/GBM-3", "RepoA", "RepoB");
-        var sut = new OpenPullRequestsTaskCommandArgsBuilder(repo, git);
-
-        var dict = await sut.BuildAsync(["-pr-open", "GBM-3", "nopush"]);
-        Assert.Equal("GBM-3", dict["TaskId"]);
-        Assert.Equal(false, Convert.ToBoolean(dict["PushLocalChanges"]));
-    }
-
-    [Fact]
-    public async Task BuildAsync_UsesNoPushOptionAndProvidedRepos()
-    {
-        var repo = new FakeTaskInfoRepository();
-        repo.Seed(new TaskInfo("GBM-3", "s", "d", "u", "feature/GBM-3"));
-        var git = new FakeGitTool();
-        var sut = new OpenPullRequestsTaskCommandArgsBuilder(repo, git);
-
-        var dict = await sut.BuildAsync(["-pr-open", "GBM-3", "nopush", "RepoX", "RepoY"]);
-        Assert.Equal("GBM-3", dict["TaskId"]);
-        Assert.Equal(false, Convert.ToBoolean(dict["PushLocalChanges"]));
-        Assert.Equal(["RepoX", "RepoY"], dict["Repositories"] as IEnumerable<string>);
+        var world = new TaskWorld(); world.Git.AddRepository("Api"); world.Seed("P-1", [new("Api", "removed-local")]);
+        await world.PullRequests.SaveAsync("P-1", "api", 1, "url");
+        var result = await Builder(world).BuildAsync(["-pr", "P-1"]);
+        Assert.Equal("removed-local", Assert.Single((RepositoryBranchTarget[])result["Targets"]).BranchName);
     }
 }

@@ -1,28 +1,22 @@
 using Gbm.Services.Git;
+using Gbm.Services.Tasks;
 using RA.Console.DependencyInjection.Attributes;
 
-namespace Gbm.Commands.BranchesCommands
-{
-    public class RemoveTaskBranchesCommand(IGitTool gitTool)
-    {
-        [CommandAsyncWithArgsBuilderAsync<BranchesCommandArgsBuilder>("-r",
-            Description = "Remove local task branches",
-            Example = "gbm -r <TaskId> [Repos...]",
-            Group = CommandGroups.Branches,
-            Order = 6)]
-        public async Task<int> ExecuteAsync(string taskBranch, string[] repositories, CancellationToken cancellationToken = default)
-        {
-            gitTool.ShowGitOutput = true;
-            MyConsole.WriteCommandHeader("🧹 Removing local task branches...");
-            foreach (var repo in repositories)
-            {
-                await gitTool.SetRepositoryAsync(repo, cancellationToken);
-                MyConsole.WriteStep($"→ Deleting local branch '{taskBranch}' from {repo}");
-                await gitTool.DeleteLocalBranchAsync(taskBranch, cancellationToken);
-            }
+namespace Gbm.Commands.BranchesCommands;
 
-            MyConsole.WriteSucess("✅ Branch cleanup completed!");
-            return 0;
-        }
+public class RemoveTaskBranchesCommand(IGitTool gitTool)
+{
+    [CommandAsyncWithArgsBuilderAsync<BranchesCommandArgsBuilder>("-r", Description = "Delete local mapped task branches, retaining saved mappings",
+        Example = "gbm -r <TaskId> [Repos...]", Group = CommandGroups.Branches, Order = 6)]
+    public async Task<int> ExecuteAsync(RepositoryBranchTarget[] targets, CancellationToken cancellationToken = default)
+    {
+        MyConsole.WriteCommandHeader("🧹 Removing local task branches...");
+        await BranchExecution.ForEachAsync(targets, async target =>
+        {
+            await gitTool.SetRepositoryAsync(target.Repository, cancellationToken);
+            await gitTool.DeleteLocalBranchAsync(target.BranchName, cancellationToken);
+        });
+        MyConsole.WriteSucess("✅ Local task branches removed.");
+        return 0;
     }
 }

@@ -6,6 +6,9 @@
         bool ShowGitOutput { get; set; }
         string? WorkingDirectory { get; }
 
+        Task<RemoteBranchDiscoveryResult> GetRemoteBranchNamesAsync(string repository, CancellationToken cancellationToken = default);
+        Task ValidateBranchNameAsync(string branch, CancellationToken cancellationToken = default);
+
         Task<bool> BranchExistsAsync(string branch, CancellationToken cancellationToken = default);
         Task<bool> BranchExistsRemotelyAsync(string branch, CancellationToken cancellationToken = default);
         Task<bool> CheckoutAsync(string branch, CancellationToken cancellationToken = default);
