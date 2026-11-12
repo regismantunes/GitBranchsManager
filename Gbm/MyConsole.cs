@@ -2,6 +2,7 @@ namespace Gbm
 {
     public static class MyConsole
     {
+        private static bool _cursorAvailable = true;
         #region Colors
         public static ConsoleColor ErrorColor { get; set; } = ConsoleColor.Red;
         public static ConsoleColor SucessColor { get; set; } = ConsoleColor.Green;
@@ -15,13 +16,13 @@ namespace Gbm
         public static void SetDefaults()
         {
             Console.OutputEncoding = System.Text.Encoding.UTF8;
-            Console.CursorVisible = false;
+            SetCursorVisible(false);
         }
 
         public static void ResetConsole()
         {
             Console.ResetColor();
-            Console.CursorVisible = true;
+            SetCursorVisible(true);
             _progressBarActive = false;
             _progressPercent = 0m;
         }
@@ -40,9 +41,10 @@ namespace Gbm
         #region Manage Showing
         public static void BackToPreviousLine()
         {
-            Console.SetCursorPosition(0, Console.CursorTop == 0 ? 0 : Console.CursorTop - 1);
+            if (!_cursorAvailable) return;
+            TryCursorOperation(() => Console.SetCursorPosition(0, Console.CursorTop == 0 ? 0 : Console.CursorTop - 1));
             Console.Write(new string(' ', Console.WindowWidth));
-            Console.SetCursorPosition(0, Console.CursorTop);
+            TryCursorOperation(() => Console.SetCursorPosition(0, Console.CursorTop));
         }
         #endregion
 
@@ -58,12 +60,12 @@ namespace Gbm
         {
             try
             {
-                Console.CursorVisible = true;
+                SetCursorVisible(true);
                 return Console.ReadLine() ?? string.Empty;
             }
             finally
             {
-                Console.CursorVisible = false;
+                SetCursorVisible(false);
             }
         }
 
@@ -160,6 +162,28 @@ namespace Gbm
             _progressBarCursorTop = Console.CursorTop;
             UpdateProgressBar(_progressPercent);
             Console.SetCursorPosition(0, _progressBarCursorTop);
+        }
+
+        private static void SetCursorVisible(bool visible) => TryCursorOperation(() => Console.CursorVisible = visible);
+
+        private static void TryCursorOperation(Action operation)
+        {
+            if (!_cursorAvailable) return;
+
+            try
+            {
+                operation();
+            }
+            catch (IOException)
+            {
+                _cursorAvailable = false;
+                _progressBarActive = false;
+            }
+            catch (InvalidOperationException)
+            {
+                _cursorAvailable = false;
+                _progressBarActive = false;
+            }
         }
     }
 }
